@@ -1,8 +1,8 @@
 
 const { Builder, By, Key } = require('selenium-webdriver');
-const { fork } = require('child_process')
 const express = require('express');
 const bodyParser = require('body-parser');
+const controllerRouter = require('./router.js')
 
 
 const app = express();
@@ -13,148 +13,7 @@ app.listen(port, () => {
     console.log(`listening at http://localhost:${port}`)
 })
 
-
-//create uuid
-const uuid = require('uuid');
-
-
-class mutex {
-    constructor() {
-        this.locked = false
-    }
-
-    acquire() {
-        if (this.locked) {
-            return false;
-        }
-        else {
-            this.locked = true
-
-            return true
-        }
-    }
-
-    release() {
-        this.locked = false
-    }
-}
-
-
-
-let crawlerId = 0
-let mutexOcioso = new mutex()
-
-let child = null
-
-let lastStatus = 'ocioso'
-
-
-
-const createChild = () => {
-
-    //checkar se child ainda esta conectado
-    if (child != null && child.connected) {
-        console.log('child ainda vivo, matando')
-        child.disconnect()
-    }
-
-    child = fork('./mock_crawler.js')
-    console.log("______________ nova thread _____________")
-    console.log("PID do crawler recem criado: " + child.pid)
-
-
-    child.on('message', ([type, message]) => {
-
-        console.log("Crawler " + crawlerId)
-
-        console.log(message)
-
-
-        if (type == 'end') {
-            mutexOcioso.release()
-            console.log('Crawler ' + crawlerId + ' acabou com sucesso')
-        }
-        else if (type == 'status') {
-            lastStatus = message
-        }
-        else if (type == 'stop') {
-            lastStatus = message
-        }
-    })
-
-    child.on('error', (error) => {
-        console.log("Um erro fatal aconteceu, o que nao deveria rolar ja que tenho um try catch")
-        console.log(error)
-        mutexOcioso.release()
-    })
-
-}
-app.get('/health', (req, res) => {
-
-    if (mutexOcioso.locked) {
-        child.send(['status'])
-        res.send(`Crawler ${crawlerId} ocupado. Ultimo status: ${lastStatus}`)
-    }
-    else {
-        res.send(`Crawler ocioso`)
-    }
-
-})
-
-app.get('/stop', async (req, res) => {
-
-    if (!mutexOcioso.locked) {
-        res.send('Crawler ocioso, nao ha nada para parar')
-        return
-    }
-
-    //envia stop para filho
-    child.send(['stop'])
-
-    //indica que o crawler esta ocioso
-    mutexOcioso.release()
-    console.log("Crawler parado forçadamente com sucesso")
-
-    //criar outro processo ja que o anterior foi parado nao é necessario
-    res.send(`Crawler ${crawlerId} interrompido`)
-
-})
-
-app.post('/start', async (req, res) => {
-
-    const timeout = req.body.timeout
-    const percentage = req.body.percentage
-
-
-    const estaOcioso = mutexOcioso.acquire()
-
-    if (!estaOcioso) {
-        res.send(`Crawler ${crawlerId} ocupado`)
-        return
-    }
-    //criar nova thread
-    createChild()
-    crawlerId = uuid.v4()
-
-
-    parameters = {
-        timeout: timeout ?? 3000,
-        percentage: percentage ?? 0.5,
-        id: crawlerId
-    }
-    //criar processo se o ultimo acabou, nao deve acontecer
-    if (child == null || child.killed || child.exitCode != null) {
-        console.warn("Crawler morreu, criando novo processo")
-       
-    }
-
-    //enviar mensagem de inicio e parametros
-    child.send(["start", parameters])
-
-    //devolver uuid
-    res.send(`Crawler ${crawlerId} started`)
-
-})
+app.use('/', controllerRouter)
 
 app.get('/test', async (request, response) => {
     try {
