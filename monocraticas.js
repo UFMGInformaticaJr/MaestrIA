@@ -6,8 +6,6 @@ let Monocraticas = {
         relator : null,
         data_julgamento : null,
         data_publicacao : null,
-        orgao_julgador : null,
-        ementa : null,
         decisao_jurisprudencia : null,
         numero_tema : null,
         texto_tema : null,
@@ -20,6 +18,11 @@ let Monocraticas = {
         numeros_origem : null,
         numero_unico_cnj : null,
         linha_citacao : null,
+        indexacao : null,
+        legislacao : null,
+        observacao: null,
+        monocraticas_mesmo_sentido : null,
+        dados_dourtrina: null,
     }
 
 
