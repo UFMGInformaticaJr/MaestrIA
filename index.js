@@ -33,7 +33,7 @@ async function scrapingMonocraticas() {
     try {
         let elemento
         await driver.get('https://jurisprudencia.stf.jus.br/pages/search/despacho82673/false')
-        await driver.sleep(2000)
+        await driver.sleep(3000)
 
         //parte de CONSULTA
         // elemento = await driver.findElement(By.className('mat-icon notranslate mat-tooltip-trigger icon cursor-pointer ml-5 material-icons mat-icon-no-color'));
@@ -76,10 +76,10 @@ async function scrapingMonocraticas() {
         // //cliclar no link de dados completos
         // elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[1]/a'))
         // elemento.click()
-        // await driver.sleep(2000)
+        await driver.sleep(2000)
 
 
-        
+       
         //parte da COLETA mudar para funçao
   
         //CHECAR SE EXISTE ELEMENTOS NA PÁGINA
@@ -117,11 +117,9 @@ async function scrapingMonocraticas() {
         }
 
 
-        
+    
         Monocraticas.id = 1;
         Monocraticas.url_jurisprudencia = await driver.getCurrentUrl();
-
-        driver.sleep(3000)
 
         Monocraticas.processo = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[1]/div/div[1]/div[1]/h4[1]')).getText();
         Monocraticas.processo = Monocraticas.processo.split('-')[0];
@@ -138,6 +136,9 @@ async function scrapingMonocraticas() {
 
         Monocraticas.data_publicacao = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[1]/div/h4[2]')).getText();
         Monocraticas.data_publicacao = Monocraticas.data_publicacao.split(' ')[1];
+
+        Monocraticas.partes = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[2]/div/div[3]/div')).getText();
+        Monocraticas.partes = Monocraticas.partes.replace(/(\r\n|\n|\r)/gm, " ");
         
         Monocraticas.decisao_jurisprudencia = await driver.findElement(By.xpath('//*[@id="decisaoTexto"]')).getText();
         Monocraticas.decisao_jurisprudencia = Monocraticas.decisao_jurisprudencia.replace(/(\r\n|\n|\r)/gm, " ");
@@ -162,54 +163,64 @@ async function scrapingMonocraticas() {
         }
 
         if (mono_msm_sentido.length > 0){
-            Monocraticas.mono_msm_sentido = await textoMonoMsmSentido.getText();
-            Monocraticas.mono_msm_sentido = Monocraticas.mono_msm_sentido.replace(/(\r\n|\n|\r)/gm, " ");
+            Monocraticas.monocraticas_mesmo_sentido = await textoMonoMsmSentido.getText();
+            Monocraticas.monocraticas_mesmo_sentido = Monocraticas.monocraticas_mesmo_sentido.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
         if (doutrina.length > 0){
-            Monocraticas.doutrina = await textoDoutrina.getText();
-            Monocraticas.doutrina = Monocraticas.doutrina.replace(/(\r\n|\n|\r)/gm, " ");
+            Monocraticas.dados_dourtrina = await textoDoutrina.getText();
+            Monocraticas.dados_dourtrina = Monocraticas.dados_dourtrina.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
 
-        // --------------------- PAREI AQUI  --------------------- //
-
-
-
-        driver.sleep(5000)
+        await driver.sleep(3000)
         //ACOMPANHAMENTO PROCESSUAL
         const currentWindow = await driver.getWindowHandle();
 
         // const assert = require('assert');
-        // const teste = await driver.getAllWindowHandles();
-        // console.log(teste.length)
         // assert (await driver.getAllWindowHandles().length 1);
+
+        elemento = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[1]/div/div[1]/div[2]/div/mat-icon[1]'))
         
+        
+        await driver.wait(until.elementIsVisible(elemento), 3000);         
+        await driver.wait(until.elementIsEnabled(elemento), 3000);         
+        await elemento.click();
 
-        // elemento =  await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[2]/div/mat-icon[2]'))
+    
+        await driver.sleep(3000)
 
-        // await driver.wait(until.elementIsVisible(elemento), 3000);         
-        // await driver.wait(until.elementIsEnabled(elemento), 3000);         
-        // await elemento.click();
-
-       
-
-        // const foi = 0;
-        // while(foi == 0) {
-        //     try {
-        //         elemento = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[2]/div/div[1]/div[2]/div/mat-icon[1]')).getAttribute('href');
-        //         elemento.click()
-        //         foi = 1
-        //     } catch (error) {
-        //         console.log('Erro na abertura')
-        //         driver.sleep(5000)
-        //     }
-        // }
+        //mudar para a nova aba
+        const newWindow = (await driver.getAllWindowHandles()).filter(handle => handle !== currentWindow)[0];
+        await driver.switchTo().window(newWindow);
 
         await driver.sleep(3000)
 
-        const newWindow = (await driver.getAllWindowHandles()).filter(handle => handle !== currentWindow)[0];
-        await driver.switchTo().window(newWindow);
+        //pegando número unico
+        Monocraticas.numero_unico_cnj = await driver.findElement(By.xpath('//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]')).getText();
+        Monocraticas.numero_unico_cnj = Monocraticas.numero_unico_cnj.split(' ')[1];
+
+        //pegando assunto
+        Monocraticas.assunto = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li')).getAttribute('innerText');
+        Monocraticas.assunto = Monocraticas.assunto.replace(/(\r\n|\n|\r)/gm, " ");
+
+        //pegando url do processo
+        Monocraticas.url_processo_tribunal = await driver.getCurrentUrl();
+
+        //pegando número de origem
+        Monocraticas.numero_origem =  await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]')).getAttribute('innerText');
+        Monocraticas.numero_origem = Monocraticas.numero_origem.replace(/(\r\n|\n|\r)/gm, "");
+        Monocraticas.numero_origem = Monocraticas.numero_origem.trim(); //tira os espaços em branco
+
+        //pegando tribunal de origem
+        Monocraticas.tribunal_origem = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[4]')).getAttribute('innerText');
+        Monocraticas.tribunal_origem = Monocraticas.tribunal_origem.replace(/(\r\n|\n|\r)/gm, " ");
+        Monocraticas.tribunal_origem = Monocraticas.tribunal_origem.trim(); 
+
+
+        
+
+        
 
 
 
