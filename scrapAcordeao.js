@@ -1,10 +1,15 @@
 const Acordeao = require('./acordeao')
-
+const PageAcordeaoClass = require('./pages/acordeaoPage')
 const { Builder, By, until, Key } = require('selenium-webdriver');
 const scrapingAcordeao = async  () => {
-    const driver = await new Builder().forBrowser('chrome').build(); //
-    driver.manage().window().maximize();
+    //const driver = await new Builder().forBrowser('chrome').build(); //
+    //driver.manage().window().maximize();
     try {
+        const PageAcordeao = new PageAcordeaoClass();
+        await PageAcordeao.setUpSearchOptions();
+
+        console.log("Finished scraping acordeao");
+        
         let elemento
         await driver.get('https://jurisprudencia.stf.jus.br/pages/search')
         await driver.sleep(3000)
