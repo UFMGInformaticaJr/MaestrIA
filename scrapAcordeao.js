@@ -1,43 +1,7 @@
+const Acordeao = require('./acordeao')
 
 const { Builder, By, until, Key } = require('selenium-webdriver');
-const express = require('express');
-const bodyParser = require('body-parser');
-const controllerRouter = require('./router.js')
-const chrome = require('selenium-webdriver/chrome');
-
-const scrapAcordao = require('./scrapAcordeao.js');
-
-const Monocraticas = require('./monocraticas.js')
-
-
-const app = express();
-
-const port = 3000
-app.use(bodyParser.json());
-app.listen(port, () => {
-    console.log(`listening at http://localhost:${port}`)
-})
-
-app.use('/', controllerRouter)
-
-app.get('/acordeao', async (request, response) => {
-    try {
-        let links = await scrapAcordao();
-        response.status(200).json(links)
-    } catch (error) {
-        console.log(error)
-    }
-})
-app.get('/monocraticas', async (request, response) => {
-    try {
-        let links = await scrapingMonocraticas();
-        response.status(200).json(links)
-    } catch (error) {
-        console.log(error)
-    }
-})
-
-async function scrapingMonocraticas() {
+const scrapingAcordeao = async  () => {
     const driver = await new Builder().forBrowser('chrome').build(); //
     driver.manage().window().maximize();
     try {
@@ -45,14 +9,10 @@ async function scrapingMonocraticas() {
         await driver.get('https://jurisprudencia.stf.jus.br/pages/search')
         await driver.sleep(3000)
 
-        // parte de CONSULTA
+        // abre a pesquisa avançada
         elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/mat-form-field/div/div[1]/div[4]/div/mat-icon[3]'));
         await elemento.click();
 
-
-        // SELECIONA MONOCRATICAS
-        elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[1]/div/mat-radio-group/span[4]/mat-radio-button/label/div[1]/div[2]'))
-        elemento.click()
 
 
         // DESABILITA BUSCA ENTRE ASPAS
@@ -63,16 +23,17 @@ async function scrapingMonocraticas() {
         elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div/input'))
         driver.executeScript("arguments[0].click();", elemento);
 
-        //CAMPO DE BUSCA
+
+        //colocar recurso na pesquisa em todos os campos
         elemento = driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input'))
-        elemento.sendKeys('monocratica') //mudar para variavel posteriormente
+        elemento.sendKeys('recurso') //mudar para variavel posteriormente
 
         //BOTAO PESQUISAR
         elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[2]/button[2]'))
         elemento.click()
 
         //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
-        await driver.sleep(1000)
+        await driver.sleep(2000)
         elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/div/div/div[1]/div[2]/div[3]/div/div[2]/mat-form-field[1]/div/div[1]/div[3]/input'))
         elemento.click()
         await elemento.sendKeys('01/01/2000')
@@ -93,13 +54,16 @@ async function scrapingMonocraticas() {
         elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[1]/a'))
         elemento.click()
 
-        await driver.sleep(3000)
+        await driver.sleep(2000)
         //---------------IMPLEMNTAR A PARTE DAS PÁGINAS E MUDAR A QUANTIDADE DE PÁGINAS PELO HTML PRA 250--------------------------------------
      
        
         //parte da COLETA mudar para funçao
   
         //CHECAR SE EXISTE ELEMENTOS NA PÁGINA
+        const tema = await driver.findElements(By.xpath('//h4[contains(text(), "Tema")]'))
+        //barra azul no canto superior direito
+        const repercusao_geral = await driver.findElements(By.xpath('//div[contains(text(), "Repercussão Geral")]'))
         const indexacao = await driver.findElements(By.xpath('//h4[contains(text(), "Indexação")]'))
         const legislacao = await driver.findElements(By.xpath("//h4[contains(text(), 'Legislação')]"))
         const observacao = await driver.findElements(By.xpath("//h4[contains(text(), 'Observação')]"))
@@ -135,57 +99,57 @@ async function scrapingMonocraticas() {
 
 
 
-        Monocraticas.id = 1;
-        Monocraticas.url_jurisprudencia = await driver.getCurrentUrl();
+        Acordeao.id = 1;
+        Acordeao.url_jurisprudencia = await driver.getCurrentUrl();
 
-        Monocraticas.processo = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[1]/h4[1]')).getText();
-        Monocraticas.processo = Monocraticas.processo.split('-')[0];
+        Acordeao.processo = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[1]')).getText();
+        Acordeao.processo = Acordeao.processo.split('-')[0];
 
-        Monocraticas.classe = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[1]/h4[2]')).getText();
-        Monocraticas.classe = Monocraticas.classe.split(' ')[0];
+        Acordeao.classe = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[2]')).getText();
+        Acordeao.classe = Acordeao.classe.split(' ')[0];
 
-        Monocraticas.relator = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[1]/h4[3]')).getText();
-        Monocraticas.relator = ("Min.") + Monocraticas.relator.split('.')[1];
+        Acordeao.relator = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[3]')).getText();
+        Acordeao.relator = ("Min.") + Acordeao.relator.split('.')[1];
 
-        Monocraticas.data_julgamento = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[2]/div/div[1]/div[1]/div/h4[1]')).getText();
-        Monocraticas.data_julgamento = Monocraticas.data_julgamento.split(' ')[1];
+        Acordeao.data_julgamento = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/div/h4[1]')).getText();
+        Acordeao.data_julgamento = Acordeao.data_julgamento.split(' ')[1];
 
-        Monocraticas.data_publicacao = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[2]/div/div[1]/div[1]/div/h4[2]')).getText();
-        Monocraticas.data_publicacao = Monocraticas.data_publicacao.split(' ')[1];
+        Acordeao.data_publicacao = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/div/h4[2]')).getText();
+        Acordeao.data_publicacao = Acordeao.data_publicacao.split(' ')[1];
 
-        Monocraticas.partes = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[3]/div')).getText();
-        Monocraticas.partes = Monocraticas.partes.replace(/(\r\n|\n|\r)/gm, " ");
+        Acordeao.partes = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[4]/div')).getText();
+        Acordeao.partes = Acordeao.partes.replace(/(\r\n|\n|\r)/gm, " ");
         
-        Monocraticas.decisao_jurisprudencia = await driver.findElement(By.xpath('//*[@id="decisaoTexto"]')).getText();
-        Monocraticas.decisao_jurisprudencia = Monocraticas.decisao_jurisprudencia.replace(/(\r\n|\n|\r)/gm, " ");
+        Acordeao.decisao_jurisprudencia = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[6]/div')).getText();
+        Acordeao.decisao_jurisprudencia = Acordeao.decisao_jurisprudencia.replace(/(\r\n|\n|\r)/gm, " ");
         
 
 
         //CHECAGEM DE DADOS, SE EXISTIR ADICIONAR AO OBJETO
         if (indexacao.length > 0) {
-            Monocraticas.indexacao = await textoIndexacao.getText();
-            Monocraticas.indexacao = Monocraticas.indexacao.replace(/(\r\n|\n|\r)/gm, " ");
+            Acordeao.indexacao = await textoIndexacao.getText();
+            Acordeao.indexacao = Acordeao.indexacao.replace(/(\r\n|\n|\r)/gm, " ");
         }
            
         
         if (legislacao.length > 0){
-            Monocraticas.legislacao = await textoLegislacao.getText();
-            Monocraticas.legislacao = Monocraticas.legislacao.replace(/(\r\n|\n|\r)/gm, " ");
+            Acordeao.legislacao = await textoLegislacao.getText();
+            Acordeao.legislacao = Acordeao.legislacao.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
         if (observacao.length > 0){
-            Monocraticas.observacao = await textoObservacao.getText();
-            Monocraticas.observacao = Monocraticas.observacao.replace(/(\r\n|\n|\r)/gm, " ");
+            Acordeao.observacao = await textoObservacao.getText();
+            Acordeao.observacao = Acordeao.observacao.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
         if (mono_msm_sentido.length > 0){
-            Monocraticas.monocraticas_mesmo_sentido = await textoMonoMsmSentido.getText();
-            Monocraticas.monocraticas_mesmo_sentido = Monocraticas.monocraticas_mesmo_sentido.replace(/(\r\n|\n|\r)/gm, " ");
+            Acordeao.Acordeao_mesmo_sentido = await textoMonoMsmSentido.getText();
+            Acordeao.Acordeao_mesmo_sentido = Acordeao.Acordeao_mesmo_sentido.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
         if (doutrina.length > 0){
-            Monocraticas.dados_dourtrina = await textoDoutrina.getText();
-            Monocraticas.dados_dourtrina = Monocraticas.dados_dourtrina.replace(/(\r\n|\n|\r)/gm, " ");
+            Acordeao.dados_dourtrina = await textoDoutrina.getText();
+            Acordeao.dados_dourtrina = Acordeao.dados_dourtrina.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
 
@@ -195,7 +159,8 @@ async function scrapingMonocraticas() {
         // const assert = require('assert');
         // assert (await driver.getAllWindowHandles().length 1);
 
-        elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[2]/div/mat-icon[1]'))
+        //clicar no icone de acompanhamento processual
+        elemento = await driver.findElement(By.xpath('//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[1]'))
         
         
         await driver.wait(until.elementIsVisible(elemento), 3000);         
@@ -212,25 +177,32 @@ async function scrapingMonocraticas() {
         await driver.sleep(3000)
 
         //pegando número unico
-        Monocraticas.numero_unico_cnj = await driver.findElement(By.xpath('//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]')).getText();
-        Monocraticas.numero_unico_cnj = Monocraticas.numero_unico_cnj.split(' ')[2];
+        //verificar se o elemento existe
+
+        //existem alguns que o cnpj nao existe, o texto diz sem numero unico
+        const numeroCnpjXpath = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]'
+   
+        const textpCnpj = await driver.findElement(By.xpath(numeroCnpjXpath)).getText();
+        Acordeao.numero_unico_cnpj = textpCnpj.split('-')[0];
+    
+
 
         //pegando assunto
-        Monocraticas.assunto = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li')).getAttribute('innerText');
-        Monocraticas.assunto = Monocraticas.assunto.replace(/(\r\n|\n|\r)/gm, " ");
+        Acordeao.assunto = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li')).getAttribute('innerText');
+        Acordeao.assunto = Acordeao.assunto.replace(/(\r\n|\n|\r)/gm, " ");
 
         //pegando url do processo
-        Monocraticas.url_processo_tribunal = await driver.getCurrentUrl();
+        Acordeao.url_processo_tribunal = await driver.getCurrentUrl();
 
         //pegando número de origem
-        Monocraticas.numero_origem =  await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]')).getAttribute('innerText');
-        Monocraticas.numero_origem = Monocraticas.numero_origem.replace(/(\r\n|\n|\r)/gm, "");
-        Monocraticas.numero_origem = Monocraticas.numero_origem.trim(); //tira os espaços em branco
+        Acordeao.numero_origem =  await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]')).getAttribute('innerText');
+        Acordeao.numero_origem = Acordeao.numero_origem.replace(/(\r\n|\n|\r)/gm, "");
+        Acordeao.numero_origem = Acordeao.numero_origem.trim(); //tira os espaços em branco
 
         //pegando tribunal de origem
-        Monocraticas.tribunal_origem = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[4]')).getAttribute('innerText');
-        Monocraticas.tribunal_origem = Monocraticas.tribunal_origem.replace(/(\r\n|\n|\r)/gm, " ");
-        Monocraticas.tribunal_origem = Monocraticas.tribunal_origem.trim(); 
+        Acordeao.tribunal_origem = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[4]')).getAttribute('innerText');
+        Acordeao.tribunal_origem = Acordeao.tribunal_origem.replace(/(\r\n|\n|\r)/gm, " ");
+        Acordeao.tribunal_origem = Acordeao.tribunal_origem.trim(); 
 
         //voltando para a aba anterior
         driver.close();
@@ -238,24 +210,26 @@ async function scrapingMonocraticas() {
 
         await driver.sleep(3000)
 
+        
         //clicar no icone de mostrar integra e mudar para a nova aba
         try{
-            elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[2]/div/mat-icon[2]')).click();
+            const xpathInteiroTeor = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]'
+            elemento = await driver.findElement(By.xpath(xpathInteiroTeor)).click();
             const newWindow2 = (await driver.getAllWindowHandles()).filter(handle => handle !== currentWindow)[0];
             //necessario fazer isso pq é um popup
             await driver.switchTo().window(newWindow2);
             await driver.sleep(3000)
-            Monocraticas.url_inteiro_teor = await driver.getCurrentUrl();
+            Acordeao.url_inteiro_teor = await driver.getCurrentUrl();
             driver.close();
             await driver.switchTo().window(currentWindow);
         }catch(error){
-            Monocraticas.url_inteiro_teor = "Não disponível";
+            Acordeao.url_inteiro_teor = "Não disponível";
        
         }
         
 
 
-        console.log(Monocraticas)
+        console.log(Acordeao)
     
     
 
@@ -274,14 +248,15 @@ async function scrapingMonocraticas() {
 
     } catch (error) {
         console.log(error);
-        return false
+        return error;
     } finally {
         await driver.quit();
     }
 
-    return Monocraticas;
+    return Acordeao;
 
 }
 
 
 
+module.exports = scrapingAcordeao 
