@@ -10,6 +10,8 @@ let Acordeao = {
     ementa: null,
     //esta na parte ementa sem formatacao
     ementa_full: null,
+    linha_citacao: null,
+  
     partes: null,
     //pode, nao existir, tem que checkar
     decisao_jurisprudencia : null,

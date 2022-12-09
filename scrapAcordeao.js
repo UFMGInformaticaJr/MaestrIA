@@ -7,8 +7,7 @@ const scrapingAcordeao = async  () => {
     try {
         const PageAcordeao = new PageAcordeaoClass();
         await PageAcordeao.setUpSearchOptions();
-        console.log("Finished scraping acordeao");
-
+     
         
        
 
@@ -39,17 +38,12 @@ const scrapingAcordeao = async  () => {
   
         //CHECAR SE EXISTE ELEMENTOS NA PÁGINA
         
-        Acordeao.tema= await PageAcordeao.getContentIfTextExists("tema", "h4")
         
-
        Acordeao.indexacao  = await PageAcordeao.getContentIfTextExists("Indexação", "h4")
        Acordeao.legislacao  = await PageAcordeao.getContentIfTextExists("Legislação", "h4")
        Acordeao.observacao= await PageAcordeao.getContentIfTextExists("Observação", "h4")
        Acordeao.doutrina= await PageAcordeao.getContentIfTextExists("Doutrina", "h4")
 
-        //barra azul no canto superior direito
-        //TODO: Buscar link disso
-        const repercusao_geral = await driver.findElements(By.xpath('//div[contains(text(), "Repercussão Geral")]'))
 
         const textoClasse = await PageAcordeao.getClasse();
         Acordeao.classe = textoClasse.split(' ')[0];
@@ -69,18 +63,50 @@ const scrapingAcordeao = async  () => {
         Acordeao.decisao_jurisprudencia = await PageAcordeao.getDecisaoJurisprudencia()
         Acordeao.decisao_jurisprudencia = PageAcordeao.cleanText(Acordeao.decisao_jurisprudencia)
         
+        //TODO: Pegar  ementa
+        const textoEmenta = await PageAcordeao.getContentIfTextExists("Ementa", "h4");
+        
+        Acordeao.ementa = PageAcordeao.cleanText(textoEmenta)
 
-        //ACOMPANHAMENTO PROCESSUAL
- 
+        let fullTema = await PageAcordeao.getContentIfTextExists("Tema", "h4");
+        if (fullTema != null){
+            Acordeao.numero_tema = fullTema.split('-')[0];
+            Acordeao.texto_tema = PageAcordeao.cleanText( fullTema.split('-')[1])
+        }
 
+        Acordeao.tese = await PageAcordeao.getContentIfTextExists("Tese", "h4")
+
+        //Seção azul clara no canto superior direito
+        const repercussaoGeral = await PageAcordeao.getRepercussaoGeral()
+        if (repercussaoGeral != null){
+            Acordeao.url_rg = repercussaoGeral.link
+            try {
+            // atenção: tem uma barra diferente que - , por isso uso espaços
+
+            let textoTipoRg = repercussaoGeral.texto.split(' ')
+            //o terceiro elemento é o que segue a barra
+            textoTipoRg = textoTipoRg.at(3);
+
+            Acordeao.tipo_rg = textoTipoRg.trim()
+            // se nao achar ou tiver uma barra diferente, entra nesse caso aqui
+            } catch (error) {
+                console.error("Erro ao pegar tipo de repercussão geral")
+                console.error(error)
+                Acordeao.tipo_rg = repercussaoGeral.texto
+            }
+        }
+
+       const ementaDados = await PageAcordeao.irAbaEmentaFulleRecuperarTexto()
+       if (ementaDados != null){
+        Acordeao.ementa_full = PageAcordeao.cleanText(ementaDados.ementa_full)
+        Acordeao.linha_citacao = PageAcordeao.cleanText(ementaDados.linha_citacao)
+       }
+       
         //clicar no icone de acompanhamento processual
        await PageAcordeao.irPaginaAcompanhamentoProcessual()
 
-        //pegando número unico
-        //verificar se o elemento existe
 
-        //existem alguns que o cnpj nao existe, o texto diz sem numero unico
-
+        //existem alguns que o cnpj nao existem, o texto diz sem numero unico
         const textpCnpj = await PageAcordeao.getCnpjCruAcompanhamentoProcessual()
         Acordeao.numero_unico_cnpj = textpCnpj.split('-')[0];
     
@@ -101,6 +127,7 @@ const scrapingAcordeao = async  () => {
         Acordeao.tribunal_origem =await PageAcordeao.getTribunalOrigemAcompanhamentoProcessual()
         Acordeao.tribunal_origem =  PageAcordeao.cleanText(Acordeao.tribunal_origem)
 
+        //isso demora DEMAIS por algum motivo
         await PageAcordeao.returnOldWindow()
 
         

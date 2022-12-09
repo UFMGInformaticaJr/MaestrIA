@@ -10,6 +10,7 @@ class BasePage {
     iconePesquisaAvancada = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/mat-form-field/div/div[1]/div[4]/div/mat-icon[3]';
     botaoBuscaEntreAspas = 'html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[2]/label/div/input';
     botaoBuscaRadicais = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div/input';
+    botaoInteiroTeor = '//*[@id="mat-checkbox-3-input"]'
     inputPesquisa = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input';
 
     //botao final de pesquisa no menu inicial
@@ -170,6 +171,8 @@ class BasePage {
         let elemento
 
 
+
+
         await this.go_to_url(this.base_url);
 
         await this.selectAndWait(this.iconePesquisaAvancada, 20000);
@@ -188,6 +191,11 @@ class BasePage {
         elemento = await this.getElementByXpath(this.botaoBuscaRadicais);
         driver.executeScript("arguments[0].click();", elemento);
 
+        if (type == 'acordeao'){
+            //Clicar em inteiro teor
+            elemento = await this.getElementByXpath(this.botaoInteiroTeor);
+            driver.executeScript("arguments[0].click();", elemento); 
+        }
 
         //colocar recurso na pesquisa em todos os campos
         elemento = await this.getElementByXpath(this.inputPesquisa);
@@ -197,7 +205,7 @@ class BasePage {
         if (type == 'monocraticas' || type == 'monocratica') {
             searchQuery = 'monocratica'
         }
-        else if (type == 'acordeao' || type == 'acordeao') {
+        else if (type == 'acordeao') {
             searchQuery = 'recurso'
         }
         else {
