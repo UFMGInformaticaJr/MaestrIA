@@ -15,6 +15,8 @@ class AcordeaoPage extends BasePage{
     pathIconeAcompanhamentoProcessual = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[1]';
     pathIconeInteiroTeor =  '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]';
 
+    pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
+
     pathNumeroCnpj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
     pathAssuntoAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li'
     
@@ -32,7 +34,12 @@ class AcordeaoPage extends BasePage{
     async setUpSearchOptions(){
         await super.setUpSearchOptions('acordeao');
     }
-    //TODO: método que vai na ementa sem formatação e salva o texto para ementa_full e linha_citacao
+
+    async getOrgaoJulgador(){
+        const orgaoJulgador = await this.getElementByXpath(this.pathOrgaoJulgador);
+        return await orgaoJulgador.getText();
+    }
+
     async irAbaEmentaFulleRecuperarTexto(){
         //Clickar na aba ementa e mudar de aba
         await this.clickByXpath(this.pathTabEmentafull);

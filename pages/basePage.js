@@ -57,7 +57,14 @@ class BasePage {
         await driver.findElement(By.css(css)).sendKeys(searchText);
     }
     async getElementByXpath(xpath) {
-        return await driver.findElement(By.xpath(xpath));
+        try {
+            return await driver.findElement(By.xpath(xpath));
+        }
+        catch (err) {
+            console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
+            console.error(err.stack);
+            throw err;
+        }
     }
     async getTextUsingSelector(path, func = this.getElementByXpath) {
         const elem = await func(path)
@@ -100,12 +107,18 @@ class BasePage {
         if (foundElements === null || foundElements.length === 0)
             return null;
 
-        let textFound = null;
-        for (const elementos of foundElements) {
-            textFound = elementos.findElement(By.xpath("following-sibling::*"))
-        }
+        try {
+            let textFound = null;
+            for (const elementos of foundElements) {
+                textFound = elementos.findElement(By.xpath("following-sibling::*"))
+            }
 
-        return await textFound.getText();
+            return await textFound.getText();
+        } catch (err) {
+            console.error(`Erro ao encontrar texto: ${text}`)
+            console.error(err.stack);
+            throw err;
+        }
 
     }
 
@@ -128,7 +141,7 @@ class BasePage {
     }
 
     async waitUntilElementIsVisible(element, timeout = 3000) {
-        
+
         await driver.wait(webdriver.until.elementIsVisible(element), timeout);
     }
     async waitUntilElementIsEnabled(element, timeout = 3000) {
@@ -141,7 +154,7 @@ class BasePage {
         //let el = await driver.findElement(By.xpath(xpath));
         //await driver.wait(until.elementIsVisible(el),100);
 
-        if (!element )
+        if (!element)
             throw new Error(`Element ${xpath} not found`);
 
         if (mode === 'visible') {
@@ -166,7 +179,7 @@ class BasePage {
         await driver.quit();
     }
 
-    async setUpSearchOptions(type='acordeao') {
+    async setUpSearchOptions(type = 'acordeao') {
         driver.manage().window().maximize()
         let elemento
 
@@ -191,10 +204,10 @@ class BasePage {
         elemento = await this.getElementByXpath(this.botaoBuscaRadicais);
         driver.executeScript("arguments[0].click();", elemento);
 
-        if (type == 'acordeao'){
+        if (type == 'acordeao') {
             //Clicar em inteiro teor
             elemento = await this.getElementByXpath(this.botaoInteiroTeor);
-            driver.executeScript("arguments[0].click();", elemento); 
+            driver.executeScript("arguments[0].click();", elemento);
         }
 
         //colocar recurso na pesquisa em todos os campos
@@ -218,23 +231,37 @@ class BasePage {
         elemento = await this.getElementByXpath(this.botaoPesquisar);
         await elemento.click()
     }
-    async inserirDatas(dataJulgamento='01/01/2000', dataPublicacao='01/01/2021') {
-        
+    async inserirDatas(dataJulgamento = '01/01/2000', dataPublicacao = '01/01/2021') {
+
         const inputInicio = await this.selectAndWait(this.inputInicioDataJulgamento, 4000);
 
         await inputInicio.click()
         await inputInicio.sendKeys(dataJulgamento)
         await inputInicio.sendKeys(Key.ENTER)
-     
+
         const inputFinal = await this.selectAndWait(this.inputFimDataJulgamento, 3000);
 
         await inputFinal.click()
         await inputFinal.sendKeys(dataPublicacao)
         await inputFinal.sendKeys(Key.TAB)
-        console.log("Inserção de datas feita com sucesso")
+
     }
 
-    async clickarPrimeiroAcordeao(){
+    async getAllDocumentsInPage(){
+        var links = await driver.findElements(By.css("a"));
+
+        // TODO: entender pq isso nao funciona
+        // Use the filter method and a regular expression to select only the links that have "/pages/search/" in their "href" attribute
+        links = links.filter(link => link.getAttribute("href").match(/\/pages\/search\//));
+        
+        // Use the map method to extract the "href" attributes from the selected links
+        var hrefs = links.map(link => link.getAttribute("href"));
+        
+        // Return the array of "href" attributes
+        return hrefs;
+    }
+
+    async clickarPrimeiroAcordeao() {
         //cliclar no link de dados completos
         const elemento = await this.getElementByXpath(this.primeiroLink);
         await elemento.click()
@@ -242,99 +269,94 @@ class BasePage {
         //aguardar pagina carregar
         await this.selectAndWait(this.pathProcesso);
     }
-    async getProcesso(){
+    async getProcesso() {
         const processo = await this.getTextUsingSelector(this.pathProcesso);
 
         return processo;
     }
 
-    async getClasse(){
-       const texto = await this.getTextUsingSelector(this.pathClasse);
-       return texto;
+    async getClasse() {
+        const texto = await this.getTextUsingSelector(this.pathClasse);
+        return texto;
     }
 
-    async getRelator(){
+    async getRelator() {
         const texto = await this.getTextUsingSelector(this.pathRelator);
         return texto;
     }
-    async getDataJulgamento(){
+    async getDataJulgamento() {
         const texto = await this.getTextUsingSelector(this.pathDataJulgamento);
         return texto;
     }
-    async getDataPublicacao(){
+    async getDataPublicacao() {
         const texto = await this.getTextUsingSelector(this.pathDataPublicacao);
         return texto;
     }
-    async getPartes(){
+    async getPartes() {
         const texto = await this.getTextUsingSelector(this.pathPartes);
         return texto;
     }
-    async getDecisaoJurisprudencia(){
+    async getDecisaoJurisprudencia() {
         const texto = await this.getTextUsingSelector(this.pathDecisaoJurisprudencia);
         return texto;
     }
 
-    async irPaginaAcompanhamentoProcessual(){
+    async irPaginaAcompanhamentoProcessual() {
 
-        const elemento = await this.getElementByXpath(this.pathIconeAcompanhamentoProcessual);
-        
-        await driver.wait(until.elementIsVisible(elemento), 3000);         
-        await driver.wait(until.elementIsEnabled(elemento), 3000);         
+        const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual);
+
         await elemento.click();
-
-    
-        await driver.sleep(3000)
 
         //mudar para a nova aba
         await this.newWindowUrl();
 
-       
+
     }
 
-    async getCnpjCruAcompanhamentoProcessual(){
+    async getCnpjCruAcompanhamentoProcessual() {
         const elemento = await this.selectAndWait(this.pathNumeroCnpj, 3000);
         const texto = await elemento.getText();
 
         return texto;
     }
 
-    async getAssuntoAcompanhamentoProcessual(){
+    async getAssuntoAcompanhamentoProcessual() {
         const assunto = await this.getInnerTextUsingSelector(this.pathAssuntoAcompanhamentoProcessual);
         return assunto;
     }
 
-    async getUrlProcessoTribunalAcompanhamentoProcessual(){
+    async getUrlProcessoTribunalAcompanhamentoProcessual() {
         return await driver.getCurrentUrl();
     }
-    async getNumeroOrigemAcompanhamentoProcessual(){
+    async getNumeroOrigemAcompanhamentoProcessual() {
         const numero = await this.getInnerTextUsingSelector(this.pathNumeroOrigemAcompanhamentoProcessual);
         return numero
     }
-    async getTribunalOrigemAcompanhamentoProcessual(){
+    async getTribunalOrigemAcompanhamentoProcessual() {
         const tribunal = await this.getInnerTextUsingSelector(this.pathTribunalOrigemAcompanhamentoProcessual);
         return tribunal;
     }
 
-    async getLinkTeorIntegra(){
-         //clicar no icone de mostrar integra e mudar para a nova aba
-         let url = ''
-         try{
-            
+    async getLinkTeorIntegra() {
+        //clicar no icone de mostrar integra e mudar para a nova aba
+        let url = ''
+        try {
+
             await this.clickByXpath(this.pathIconeInteiroTeor)
             await this.newWindowUrl();
-            
+
             //await driver.sleep(3000)
             url = await driver.getCurrentUrl();
-            
+
             await this.returnOldWindow()
-        }catch(error){
+        } catch (error) {
             url = "Não disponível";
-       
+
         }
-        finally{
+        finally {
             return url;
         }
-        
+
     }
 
 }

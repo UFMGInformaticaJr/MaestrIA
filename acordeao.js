@@ -26,7 +26,6 @@ let Acordeao = {
     legislacao : null,
     orgao_julgador: null,
     observacao: null,
-    dados_dourtrina: null,
     url_inteiro_teor : null,
     url_processo_tribunal : null,
     //esta em outra pagina

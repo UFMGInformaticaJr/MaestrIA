@@ -1,29 +1,46 @@
 const Acordeao = require('./acordeao')
 const PageAcordeaoClass = require('./pages/acordeaoPage')
 const { Builder, By, until, Key } = require('selenium-webdriver');
+
+
+
+const scrapingSetup = async (PageAcordeao) => {
+    await PageAcordeao.setUpSearchOptions();
+     
+        
+       
+    //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
+    await PageAcordeao.inserirDatas()
+    
+
+
+    //aqui deveria construir um json com as infos do scraping
+
+}
+
+const scrapSingleAcordeao = async (linkAcordeao) => {
+}
+
 const scrapingAcordeao = async  () => {
     //const driver = await new Builder().forBrowser('chrome').build(); //
     //driver.manage().window().maximize();
     try {
         const PageAcordeao = new PageAcordeaoClass();
-        await PageAcordeao.setUpSearchOptions();
-     
-        
        
+        await scrapingSetup(PageAcordeao);
 
-        //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
-        await PageAcordeao.inserirDatas()
-        
-    
-        //cliclar no link de dados completos
-        //elemento = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[1]/a'))
-        //elemento.click()
-
+        const urlsPaginas = await PageAcordeao.getAllDocumentsInPage();
+        console.log(urlsPaginas)
         await PageAcordeao.clickarPrimeiroAcordeao()
 
 
-        Acordeao.id = 1;
         Acordeao.url_jurisprudencia = await driver.getCurrentUrl();
+
+        let id = Acordeao.url_jurisprudencia.split("/search/")[1]
+        id = id.split("/")[0]
+        //deixar apenas os numeros
+        Acordeao.id = id.replace(/\D/g,'');
+        
 
         const textoProcesso = await PageAcordeao.getProcesso();
         
@@ -42,7 +59,12 @@ const scrapingAcordeao = async  () => {
        Acordeao.indexacao  = await PageAcordeao.getContentIfTextExists("Indexação", "h4")
        Acordeao.legislacao  = await PageAcordeao.getContentIfTextExists("Legislação", "h4")
        Acordeao.observacao= await PageAcordeao.getContentIfTextExists("Observação", "h4")
-       Acordeao.doutrina= await PageAcordeao.getContentIfTextExists("Doutrina", "h4")
+
+        let orgaoJulgadorText = await PageAcordeao.getOrgaoJulgador();
+        if (orgaoJulgadorText != null){
+            orgaoJulgadorText = orgaoJulgadorText.split(':')[1]
+            Acordeao.orgao_julgador = orgaoJulgadorText.trim()
+        }
 
 
         const textoClasse = await PageAcordeao.getClasse();
@@ -70,7 +92,7 @@ const scrapingAcordeao = async  () => {
 
         let fullTema = await PageAcordeao.getContentIfTextExists("Tema", "h4");
         if (fullTema != null){
-            Acordeao.numero_tema = fullTema.split('-')[0];
+            Acordeao.numero_tema = fullTema.split('-')[0].trim();
             Acordeao.texto_tema = PageAcordeao.cleanText( fullTema.split('-')[1])
         }
 
