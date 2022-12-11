@@ -37,6 +37,16 @@ app.get('/monocraticas', async (request, response) => {
     }
 })
 
+    //funcao para deixar so as iniciais em letra maiuscula e as preposiçoes em minuscula
+    function titleCase(str) {
+        return str.toLowerCase().split(' ').map(function(word) {
+            if(word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos' ){
+                return word;
+            }
+            return (word.charAt(0).toUpperCase() + word.slice(1));
+        }).join(' ');
+    }
+
 async function scrapingMonocraticas() {
     const driver = await new Builder().forBrowser('chrome').build(); //
     driver.manage().window().maximize();
@@ -102,7 +112,7 @@ async function scrapingMonocraticas() {
         //CHECAR SE EXISTE ELEMENTOS NA PÁGINA
         const indexacao = await driver.findElements(By.xpath('//h4[contains(text(), "Indexação")]'))
         const legislacao = await driver.findElements(By.xpath("//h4[contains(text(), 'Legislação')]"))
-        const observacao = await driver.findElements(By.xpath("//h4[contains(text(), 'Observação')]"))
+        const notas_obervacoes_gerais = await driver.findElements(By.xpath("//h4[contains(text(), 'Observação')]"))
         const mono_msm_sentido = await driver.findElements(By.xpath("//h4[contains(text(), 'Decisões no mesmo sentido')]"))
         const doutrina = await driver.findElements(By.xpath("//h4[contains(text(), 'Doutrina')]"))
 
@@ -121,7 +131,7 @@ async function scrapingMonocraticas() {
             textoLegislacao = elementos.findElement(By.xpath("following-sibling::*"))
         }
 
-        for(const elementos of observacao){
+        for(const elementos of notas_obervacoes_gerais){
             textoObservacao = elementos.findElement(By.xpath("following-sibling::*"))
         }
 
@@ -135,17 +145,20 @@ async function scrapingMonocraticas() {
 
 
 
-        Monocraticas.id = 1;
-        Monocraticas.url_jurisprudencia = await driver.getCurrentUrl();
+        Monocraticas.id_jurisprudencia = 1;
+        Monocraticas.url_jurisprudencia_tribunal = await driver.getCurrentUrl();
 
         Monocraticas.processo = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[1]/h4[1]')).getText();
         Monocraticas.processo = Monocraticas.processo.split('-')[0];
-
+        
+     
         Monocraticas.classe = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[1]/h4[2]')).getText();
-        Monocraticas.classe = Monocraticas.classe.split(' ')[0];
+        Monocraticas.classe = titleCase(Monocraticas.classe);
+
 
         Monocraticas.relator = await driver.findElement(By.xpath('/html/body/app-root/app-home/main/app-search-detail/div/div/div[2]/div/div[1]/div[1]/h4[3]')).getText();
-        Monocraticas.relator = ("Min.") + Monocraticas.relator.split('.')[1];
+        Monocraticas.relator = Monocraticas.relator.split('.')[1];
+        Monocraticas.relator = titleCase(Monocraticas.relator);
 
         Monocraticas.data_julgamento = await driver.findElement(By.xpath('//*[@id="scrollId"]/div/div[2]/div/div[1]/div[1]/div/h4[1]')).getText();
         Monocraticas.data_julgamento = Monocraticas.data_julgamento.split(' ')[1];
@@ -173,9 +186,9 @@ async function scrapingMonocraticas() {
             Monocraticas.legislacao = Monocraticas.legislacao.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
-        if (observacao.length > 0){
-            Monocraticas.observacao = await textoObservacao.getText();
-            Monocraticas.observacao = Monocraticas.observacao.replace(/(\r\n|\n|\r)/gm, " ");
+        if (notas_obervacoes_gerais.length > 0){
+            Monocraticas.notas_obervacoes_gerais = await textoObservacao.getText();
+            Monocraticas.notas_obervacoes_gerais = Monocraticas.notas_obervacoes_gerais.replace(/(\r\n|\n|\r)/gm, " ");
         }
 
         if (mono_msm_sentido.length > 0){
@@ -223,14 +236,15 @@ async function scrapingMonocraticas() {
         Monocraticas.url_processo_tribunal = await driver.getCurrentUrl();
 
         //pegando número de origem
-        Monocraticas.numero_origem =  await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]')).getAttribute('innerText');
-        Monocraticas.numero_origem = Monocraticas.numero_origem.replace(/(\r\n|\n|\r)/gm, "");
-        Monocraticas.numero_origem = Monocraticas.numero_origem.trim(); //tira os espaços em branco
+        Monocraticas.numeros_origem =  await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]')).getAttribute('innerText');
+        Monocraticas.numeros_origem = Monocraticas.numeros_origem.replace(/(\r\n|\n|\r)/gm, "");
+        Monocraticas.numeros_origem = Monocraticas.numeros_origem.trim(); //tira os espaços em branco
 
         //pegando tribunal de origem
         Monocraticas.tribunal_origem = await driver.findElement(By.xpath('//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[4]')).getAttribute('innerText');
         Monocraticas.tribunal_origem = Monocraticas.tribunal_origem.replace(/(\r\n|\n|\r)/gm, " ");
         Monocraticas.tribunal_origem = Monocraticas.tribunal_origem.trim(); 
+        Monocraticas.tribunal_origem = titleCase(Monocraticas.tribunal_origem);
 
         //voltando para a aba anterior
         driver.close();
@@ -245,11 +259,11 @@ async function scrapingMonocraticas() {
             //necessario fazer isso pq é um popup
             await driver.switchTo().window(newWindow2);
             await driver.sleep(3000)
-            Monocraticas.url_inteiro_teor = await driver.getCurrentUrl();
+            Monocraticas.url_pdf = await driver.getCurrentUrl();
             driver.close();
             await driver.switchTo().window(currentWindow);
         }catch(error){
-            Monocraticas.url_inteiro_teor = "Não disponível";
+            Monocraticas.url_pdf = "Não disponível";
        
         }
         
