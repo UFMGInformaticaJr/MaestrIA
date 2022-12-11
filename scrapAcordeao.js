@@ -30,7 +30,9 @@ const scrapingAcordeao = async  () => {
         await scrapingSetup(PageAcordeao);
 
         const urlsPaginas = await PageAcordeao.getAllDocumentsInPage();
-        console.log(urlsPaginas)
+        // TODO: extrair método daqui pra baixo, recebendo um href como parâmetro
+        // do array acima
+        
         await PageAcordeao.clickarPrimeiroAcordeao()
 
 

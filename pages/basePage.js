@@ -247,18 +247,25 @@ class BasePage {
 
     }
 
-    async getAllDocumentsInPage(){
-        var links = await driver.findElements(By.css("a"));
+    async getAllDocumentsInPage() {
+        await this.selectAndWait(this.primeiroLink, 3000);
+        const allLinks = await driver.findElements(By.css("a"));
+        
+        //Todos seguem esse padrão, seja monocratica ou acordeao
+        const regex = /\/pages\/search\//;
+        
+        const hrefsPaginas = [];
 
-        // TODO: entender pq isso nao funciona
-        // Use the filter method and a regular expression to select only the links that have "/pages/search/" in their "href" attribute
-        links = links.filter(link => link.getAttribute("href").match(/\/pages\/search\//));
-        
-        // Use the map method to extract the "href" attributes from the selected links
-        var hrefs = links.map(link => link.getAttribute("href"));
-        
-        // Return the array of "href" attributes
-        return hrefs;
+        for (const link of allLinks) {
+            const href = await link.getAttribute("href");
+            if (regex.test(href)) {
+                hrefsPaginas.push(href);
+            }
+        }
+      
+        return hrefsPaginas;
+
+
     }
 
     async clickarPrimeiroAcordeao() {
