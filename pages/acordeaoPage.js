@@ -28,6 +28,7 @@ class AcordeaoPage extends BasePage{
     pathTabEmentafull = '//*[@id="mat-tab-label-0-1"]'
     pathTabResultadoCompleto = '//*[@id="mat-tab-label-0-0"]'
     pathEmentaFull = '//*[@id="mat-tab-content-0-1"]/div/div/span[1]'
+    
     async enter_url(theURL){
         await this.go_to_url(theURL);
     }

@@ -1,6 +1,7 @@
 var webdriver = require('selenium-webdriver');
 const { Builder, By, until, Key } = require('selenium-webdriver');
-
+const chrome = require('selenium-webdriver/chrome');
+const fsp = require('fs').promises
 
 class BasePage {
 
@@ -42,9 +43,39 @@ class BasePage {
     pathTribunalOrigemAcompanhamentoProcessual = ''
 
     constructor() {
-        var driver = new webdriver.Builder().forBrowser('chrome').build();
+        const headless = false
+        var driver = new webdriver.Builder().forBrowser('chrome')
+        if (headless) {
+
+            const chromeOptions = new chrome.Options();
+            const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
+            //chromeOptions.addArguments(`user-agent=${user_agent}`)
+            chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
+            chromeOptions.addArguments('--ignore-certificate-errors')
+            chromeOptions.addArguments('--allow-running-insecure-content')
+            chromeOptions.addArguments("--disable-extensions")
+            chromeOptions.addArguments("--proxy-server='direct://'")
+            chromeOptions.addArguments("--proxy-bypass-list=*")
+
+            chromeOptions.addArguments('--disable-gpu')
+            chromeOptions.addArguments('--disable-dev-shm-usage')
+            chromeOptions.addArguments('--no-sandbox')
+
+            const screen = {
+                width: 1280,
+                height: 720
+            };
+
+            driver = driver.setChromeOptions(chromeOptions.headless().windowSize(screen));
+
+        }
+        driver = driver.build();
         driver.manage().setTimeouts({ implicit: (10000) });
         global.driver = driver;
+        if (!headless) {
+
+            driver.manage().window().maximize()
+        }
 
     }
 
@@ -52,6 +83,13 @@ class BasePage {
         const old = await driver.getWindowHandle();
         this.old_window.push(old);
         await driver.get(theURL);
+    }
+
+    async openUrlAndWaitForPageLoad(url) {
+        await this.go_to_url(url);
+
+        //esperar a pagina carregar. Acho que nao é necessário
+        //await this.selectAndWait(this.pathProcesso)
     }
     async enterTextByCss(css, searchText) {
         await driver.findElement(By.css(css)).sendKeys(searchText);
@@ -179,57 +217,68 @@ class BasePage {
         await driver.quit();
     }
 
+    async takeScreenshot(filename = "screenshot.png") {
+        let image = await driver.takeScreenshot()
+        await fsp.writeFile(filename, image, 'base64')
+
+    }
+
     async setUpSearchOptions(type = 'acordeao') {
-        driver.manage().window().maximize()
-        let elemento
+        try {
+            let elemento
+
+
+            await this.go_to_url(this.base_url);
+
+            await this.selectAndWait(this.iconePesquisaAvancada, 20000);
+
+            // abre a pesquisa avançada
+
+            await this.clickByXpath(this.iconePesquisaAvancada);
 
 
 
-
-        await this.go_to_url(this.base_url);
-
-        await this.selectAndWait(this.iconePesquisaAvancada, 20000);
-
-        // abre a pesquisa avançada
-
-        await this.clickByXpath(this.iconePesquisaAvancada);
-
-
-
-        // DESABILITA BUSCA ENTRE ASPAS
-        elemento = await this.getElementByXpath(this.botaoBuscaEntreAspas);
-        driver.executeScript("arguments[0].click();", elemento);
-
-        //HABILITA BUSCA POR RADICAIS
-        elemento = await this.getElementByXpath(this.botaoBuscaRadicais);
-        driver.executeScript("arguments[0].click();", elemento);
-
-        if (type == 'acordeao') {
-            //Clicar em inteiro teor
-            elemento = await this.getElementByXpath(this.botaoInteiroTeor);
+            // DESABILITA BUSCA ENTRE ASPAS
+            elemento = await this.getElementByXpath(this.botaoBuscaEntreAspas);
             driver.executeScript("arguments[0].click();", elemento);
+
+            //HABILITA BUSCA POR RADICAIS
+            elemento = await this.getElementByXpath(this.botaoBuscaRadicais);
+            driver.executeScript("arguments[0].click();", elemento);
+
+            if (type == 'acordeao') {
+                //Clicar em inteiro teor
+                elemento = await this.getElementByXpath(this.botaoInteiroTeor);
+                driver.executeScript("arguments[0].click();", elemento);
+            }
+
+            //colocar recurso na pesquisa em todos os campos
+            elemento = await this.getElementByXpath(this.inputPesquisa);
+
+            let searchQuery;
+
+            if (type == 'monocraticas' || type == 'monocratica') {
+                searchQuery = 'monocratica'
+            }
+            else if (type == 'acordeao') {
+                searchQuery = 'recurso'
+            }
+            else {
+                throw new Error('Invalid search type, must be acordeao or monocratica');
+            }
+
+            elemento.sendKeys(searchQuery) //mudar para variavel posteriormente
+
+            //BOTAO PESQUISAR
+            elemento = await this.getElementByXpath(this.botaoPesquisar);
+            await elemento.click()
+
         }
+        catch (err) {
+            console.error("Erro ao configurar opções de pesquisa")
 
-        //colocar recurso na pesquisa em todos os campos
-        elemento = await this.getElementByXpath(this.inputPesquisa);
-
-        let searchQuery;
-
-        if (type == 'monocraticas' || type == 'monocratica') {
-            searchQuery = 'monocratica'
+            throw err;
         }
-        else if (type == 'acordeao') {
-            searchQuery = 'recurso'
-        }
-        else {
-            throw new Error('Invalid search type, must be acordeao or monocratica');
-        }
-
-        elemento.sendKeys(searchQuery) //mudar para variavel posteriormente
-
-        //BOTAO PESQUISAR
-        elemento = await this.getElementByXpath(this.botaoPesquisar);
-        await elemento.click()
     }
     async inserirDatas(dataJulgamento = '01/01/2000', dataPublicacao = '01/01/2021') {
 
@@ -250,10 +299,10 @@ class BasePage {
     async getAllDocumentsInPage() {
         await this.selectAndWait(this.primeiroLink, 3000);
         const allLinks = await driver.findElements(By.css("a"));
-        
+
         //Todos seguem esse padrão, seja monocratica ou acordeao
         const regex = /\/pages\/search\//;
-        
+
         const hrefsPaginas = [];
 
         for (const link of allLinks) {
@@ -262,10 +311,45 @@ class BasePage {
                 hrefsPaginas.push(href);
             }
         }
-      
+
         return hrefsPaginas;
 
 
+    }
+
+
+    async scrapAllDocumentsInPage(scrapSingleElement = (PageAcordeao, url) => {}) {
+    
+        const hrefsPaginas = await this.getAllDocumentsInPage();
+        let retrials = 0;
+        let currentElement = 0;
+        let totalElementos = hrefsPaginas.length;
+        const listaAcordeao = [];
+
+        while (currentElement < totalElementos) {
+
+            try {
+                const url = hrefsPaginas[currentElement];
+
+                console.log("Pegando acordeao " + currentElement + " da página ")
+
+                const teste = await scrapSingleElement(this, url);
+                listaAcordeao.push(teste)
+                currentElement++;
+            }
+
+            catch (error) {
+                retrials++;
+                if (retrials > 3) {
+                    console.log("Erros por página excedidos")
+                    throw error
+                }
+                else{
+                    console.log("Erro ao pegar acordeao " + currentElement + " da página, tentando novamente")
+                }
+            }
+        }
+        return listaAcordeao;
     }
 
     async clickarPrimeiroAcordeao() {
@@ -308,15 +392,30 @@ class BasePage {
         return texto;
     }
 
-    async irPaginaAcompanhamentoProcessual() {
+    async irPaginaAcompanhamentoProcessual(retry = true) {
+        try {
+            const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual, 5000);
 
-        const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual);
+            await elemento.click();
 
-        await elemento.click();
+            //mudar para a nova aba
+            await this.newWindowUrl();
+        }
+        catch (e) {
+            // geralmente muitos erros acontecem nesse método, então é legal tentar novamente
+            if (retry) {
+                await driver.sleep(3000)
+                await this.irPaginaAcompanhamentoProcessual(false);
 
-        //mudar para a nova aba
-        await this.newWindowUrl();
+            }
+            else {
+                console.log(e)
+                console.error('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
+                e.message + - ('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
+                throw e;
 
+            }
+        }
 
     }
 
