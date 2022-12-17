@@ -1,6 +1,5 @@
 const AcordeaoObj = require('./acordeao')
 const PageAcordeaoClass = require('./pages/acordeaoPage')
-const { Builder, By, until, Key } = require('selenium-webdriver');
 
 let PageAcordeao = null;
 
@@ -28,12 +27,12 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
 
     //criar novo objeto
     const Acordeao = { ...AcordeaoObj }
-    Acordeao.url_jurisprudencia = linkAcordeao;
+    Acordeao.url_jurisprudencia_tribunal = linkAcordeao;
 
-    let id = Acordeao.url_jurisprudencia.split("/search/")[1]
+    let id = Acordeao.url_jurisprudencia_tribunal.split("/search/")[1]
     id = id.split("/")[0]
     //deixar apenas os numeros
-    Acordeao.id = id.replace(/\D/g, '');
+    Acordeao.id_jurisprudencia = id.replace(/\D/g, '');
 
 
     const textoProcesso = await PageAcordeao.getProcesso();
@@ -46,7 +45,7 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
 
     Acordeao.indexacao = await PageAcordeao.getContentIfTextExists("Indexação", "h4")
     Acordeao.legislacao = await PageAcordeao.getContentIfTextExists("Legislação", "h4")
-    Acordeao.observacao = await PageAcordeao.getContentIfTextExists("Observação", "h4")
+    Acordeao.notas_obervacoes_gerais = await PageAcordeao.getContentIfTextExists("Observação", "h4")
 
     let orgaoJulgadorText = await PageAcordeao.getOrgaoJulgador();
     if (orgaoJulgadorText != null) {
@@ -57,9 +56,10 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
 
     const textoClasse = await PageAcordeao.getClasse();
     Acordeao.classe = textoClasse.split(' ')[0];
+    Acordeao.classe = await PageAcordeao.titleCase(Acordeao.classe)
 
     const textoRelator = await PageAcordeao.getRelator();
-    Acordeao.relator = ("Min.") + textoRelator.split('.')[1];
+    Acordeao.relator = textoRelator.split('.')[1];
 
     Acordeao.data_julgamento = await PageAcordeao.getDataJulgamento();
     Acordeao.data_julgamento = Acordeao.data_julgamento.split(' ')[1];
@@ -116,9 +116,9 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
     await PageAcordeao.irPaginaAcompanhamentoProcessual()
 
 
-    //existem alguns que o cnpj nao existem, o texto diz sem numero unico
-    const textpCnpj = await PageAcordeao.getCnpjCruAcompanhamentoProcessual()
-    Acordeao.numero_unico_cnpj = textpCnpj.split('-')[0];
+    //existem alguns que o cnj nao existem, o texto diz sem numero unico
+    const textpCnpj = await PageAcordeao.getCnjCruAcompanhamentoProcessual()
+    Acordeao.numero_unico_cnj = textpCnpj.split('-')[0];
 
 
 
@@ -130,12 +130,13 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
     Acordeao.url_processo_tribunal = await PageAcordeao.getUrlProcessoTribunalAcompanhamentoProcessual()
 
     //pegando número de origem
-    Acordeao.numero_origem = await PageAcordeao.getNumeroOrigemAcompanhamentoProcessual()
-    Acordeao.numero_origem = PageAcordeao.cleanText(Acordeao.numero_origem)
+    Acordeao.numeros_origem = await PageAcordeao.getNumeroOrigemAcompanhamentoProcessual()
+    Acordeao.numeros_origem = PageAcordeao.cleanText(Acordeao.numero_origem)
 
     //pegando tribunal de origem
     Acordeao.tribunal_origem = await PageAcordeao.getTribunalOrigemAcompanhamentoProcessual()
     Acordeao.tribunal_origem = PageAcordeao.cleanText(Acordeao.tribunal_origem)
+    Acordeao.tribunal_origem = await PageAcordeao.titleCase(Acordeao.tribunal_origem)
 
     //isso demora DEMAIS por algum motivo
     await PageAcordeao.returnOldWindow()
@@ -147,19 +148,6 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
 
     console.log(Acordeao)
 
-
-
-    //PEGAR TODOS DA PÁGINA
-    // var pdfs = await driver.findElements(By.className('mat-tooltip-trigger ng-star-inserted'))
-
-    // for (const pdf of pdfs) {
-    //     let link = await pdf.getAttribute('href')
-
-    //     linksDetails.push({
-    //         link: link ?? 'Não tem pdf',
-    //     });
-
-    // }
 
     return listaAcordeao;
 }
@@ -181,7 +169,7 @@ const scrapingAcordeao = async () => {
         while (currentPage <= totalPaginas) {
             const acordeaoPagina = await PageAcordeao.scrapAllDocumentsInPage(scrapSingleAcordeao)
            
-            listaAcordeao = listaAcordeao.concat(acordeaoPagina)
+            listaAcordeao = listaAcordeao.concat(acordeaoPagina);
             currentPage++;
             //TODO: colocar delay aqui
         }

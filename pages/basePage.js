@@ -13,6 +13,7 @@ class BasePage {
     botaoBuscaRadicais = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div/input';
     botaoInteiroTeor = '//*[@id="mat-checkbox-3-input"]'
     inputPesquisa = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input';
+    inputSelecaoMonocratica  = '//*[@id="mat-radio-5"]/label/div[1]/div[1]'
 
     //botao final de pesquisa no menu inicial
     botaoPesquisar = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[2]/button[2]'
@@ -34,9 +35,10 @@ class BasePage {
     pathDecisaoJurisprudencia = '';
     pathIconeAcompanhamentoProcessual = '';
     pathIconeInteiroTeor = '';
+    pathInteiroTeorPuro = '';
 
     //elementos na pagina de acompanhamento processual
-    pathNumeroCnpj = '';
+    pathNumeroCnj = '';
     pathAssuntoAcompanhamentoProcessual = ''
     pathUrlProcessoTribunalAcompanhamentoProcessual = ''
     pathNumeroOrigemAcompanhamentoProcessual = ''
@@ -77,6 +79,14 @@ class BasePage {
             driver.manage().window().maximize()
         }
 
+    }
+    async titleCase(str) {
+        return str.toLowerCase().split(' ').map(function(word) {
+            if(word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos' ){
+                return word;
+            }
+            return (word.charAt(0).toUpperCase() + word.slice(1));
+        }).join(' ');
     }
 
     async go_to_url(theURL) {
@@ -223,7 +233,7 @@ class BasePage {
 
     }
 
-    async setUpSearchOptions(type = 'acordeao') {
+    async setUpSearchOptions(type) {
         try {
             let elemento
 
@@ -236,7 +246,12 @@ class BasePage {
 
             await this.clickByXpath(this.iconePesquisaAvancada);
 
+            await driver.sleep(1000);
 
+            if(type == 'monocratica'){
+                elemento = await this.getElementByXpath(this.inputSelecaoMonocratica);
+                driver.executeScript("arguments[0].click();", elemento);
+            }
 
             // DESABILITA BUSCA ENTRE ASPAS
             elemento = await this.getElementByXpath(this.botaoBuscaEntreAspas);
@@ -258,6 +273,7 @@ class BasePage {
             let searchQuery;
 
             if (type == 'monocraticas' || type == 'monocratica') {
+             
                 searchQuery = 'monocratica'
             }
             else if (type == 'acordeao') {
@@ -318,6 +334,7 @@ class BasePage {
     }
 
 
+
     async scrapAllDocumentsInPage(scrapSingleElement = (PageAcordeao, url) => {}) {
     
         const hrefsPaginas = await this.getAllDocumentsInPage();
@@ -332,6 +349,7 @@ class BasePage {
                 const url = hrefsPaginas[currentElement];
 
                 console.log("Pegando acordeao " + currentElement + " da página ")
+
 
                 const teste = await scrapSingleElement(this, url);
                 listaAcordeao.push(teste)
@@ -391,11 +409,15 @@ class BasePage {
         const texto = await this.getTextUsingSelector(this.pathDecisaoJurisprudencia);
         return texto;
     }
+    async getInteiroTeorPuro(){
+        const texto = await this.getTextUsingSelector(this.pathInteiroTeorPuro);
+        return texto;
+    }
 
     async irPaginaAcompanhamentoProcessual(retry = true) {
         try {
             const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual, 5000);
-
+            console.log('Acessando página de acompanhamento processual')
             await elemento.click();
 
             //mudar para a nova aba
@@ -419,8 +441,8 @@ class BasePage {
 
     }
 
-    async getCnpjCruAcompanhamentoProcessual() {
-        const elemento = await this.selectAndWait(this.pathNumeroCnpj, 3000);
+    async getCnjCruAcompanhamentoProcessual() {
+        const elemento = await this.selectAndWait(this.pathNumeroCnj, 3000);
         const texto = await elemento.getText();
 
         return texto;

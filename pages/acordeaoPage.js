@@ -17,7 +17,7 @@ class AcordeaoPage extends BasePage{
 
     pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
 
-    pathNumeroCnpj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
+    pathNumeroCnj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
     pathAssuntoAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li'
     
     pathNumeroOrigemAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]'
