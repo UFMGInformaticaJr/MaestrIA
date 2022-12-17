@@ -9,7 +9,7 @@ class MonocraticaPage extends BasePage {
     pathDataJulgamento = '//*[@id="scrollId"]/div/div[1]/div/div[1]/div[1]/div/h4[1]';
     pathDataPublicacao = '//*[@id="scrollId"]/div/div[1]/div/div[1]/div[1]/div/h4[2]';
     pathPartes = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[3]/div';
-    pathDecisaoJurisprudencia = '//*[@id="decisaoTexto"]';
+    pathInteiroTeorPuro = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[4]/div';
     pathIconeAcompanhamentoProcessual = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[2]/div/mat-icon[1]';
     pathIconeInteiroTeor =  '//*[@id="scrollId"]/div/div[1]/div/div[1]/div[2]/div/mat-icon[2]';
 

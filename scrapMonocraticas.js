@@ -60,10 +60,10 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.partes = await PageMonocratica.getPartes();
     Monocratica.partes = await PageMonocratica.cleanText(Monocratica.partes);
     
-    //Monocratica.inteiro_teor_puro = await PageMonocratica.getInteiroTeorPuro();
-    //Monocratica.inteiro_teor_puro = PageAcordeao.cleanText(Monocratica.inteiro_teor_puro);
+    Monocratica.inteiro_teor_puro = await PageMonocratica.getInteiroTeorPuro();
+    Monocratica.inteiro_teor_puro = PageMonocratica.cleanText(Monocratica.inteiro_teor_puro);
 
-    //Monocratica.ementa = Monocratica.inteiro_teor_puro;
+    Monocratica.ementa = Monocratica.inteiro_teor_puro;
     
     
 

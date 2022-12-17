@@ -412,7 +412,6 @@ class BasePage {
     }
     async getInteiroTeorPuro(){
         try{
-        // TODO: eu não sei o que esse icone de teor puro faz, mas o path nao foi setado por algum motivo
         const texto = await this.getTextUsingSelector(this.pathInteiroTeorPuro);
         return texto;
         }
