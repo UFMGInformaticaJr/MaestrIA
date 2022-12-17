@@ -47,7 +47,8 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.classe = await PageMonocratica.titleCase(Monocratica.classe);
     
 
-    Monocratica.relator = await PageMonocratica.getRelator().split('.')[1];
+    Monocratica.relator = await PageMonocratica.getRelator()
+    Monocratica.relator = Monocratica.relator?.split('.')[1].trim();
     Monocratica.relator = await PageMonocratica.titleCase(Monocratica.relator);
 
     Monocratica.data_julgamento = await PageMonocratica.getDataJulgamento();
@@ -59,10 +60,10 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.partes = await PageMonocratica.getPartes();
     Monocratica.partes = await PageMonocratica.cleanText(Monocratica.partes);
     
-    Monocratica.inteiro_teor_puro = await PageMonocratica.getInteiroTeorPuro();
-    Monocratica.inteiro_teor_puro = PageAcordeao.cleanText(Monocratica.inteiro_teor_puro);
+    //Monocratica.inteiro_teor_puro = await PageMonocratica.getInteiroTeorPuro();
+    //Monocratica.inteiro_teor_puro = PageAcordeao.cleanText(Monocratica.inteiro_teor_puro);
 
-    Monocratica.ementa = Monocratica.inteiro_teor_puro;
+    //Monocratica.ementa = Monocratica.inteiro_teor_puro;
     
     
 
@@ -79,7 +80,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.assunto = await PageMonocratica.cleanText(Monocratica.assunto);
 
     //pegando url do processo
-    Monocratica.url_processo_tribunal = await PageAcordeao.getUrlProcessoAcompanhamentoProcessual();
+    Monocratica.url_processo_tribunal = await PageMonocratica.getUrlProcessoTribunalAcompanhamentoProcessual();
 
 
     //pegando número de origem
@@ -96,7 +97,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     await PageMonocratica.returnOldWindow();
 
     //clicar no icone de mostrar integra e mudar para a nova aba
-    Monocratica.url_pdf = await PageMonocratica.getLinkTextoIntegra();
+    Monocratica.url_pdf = await PageMonocratica.getLinkTeorIntegra();
 
     console.log(Monocratica)
     
@@ -116,7 +117,7 @@ async function scrapMonocratica() {
      
         while (currentPage <= totalPaginas) {
             const monocraticaPage = await PageMonocratica.scrapAllDocumentsInPage(scrapSingleMonocratica);
-            listaMonocratica = listaMonocratica.concat(monocraticaPage);
+            listaMonocratica.push(...monocraticaPage);
             currentPage++;
         }
 
@@ -127,7 +128,7 @@ async function scrapMonocratica() {
         console.log(error)
     }
     finally {
-        await driver.close
+        await driver.quit()
     }
 
     

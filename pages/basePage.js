@@ -335,13 +335,13 @@ class BasePage {
 
 
 
-    async scrapAllDocumentsInPage(scrapSingleElement = (PageAcordeao, url) => {}) {
+    async scrapAllDocumentsInPage(scrapSingleElement = async (basePage, url) => { throw new Error("scrapSingleElement not implemented") }) {
     
         const hrefsPaginas = await this.getAllDocumentsInPage();
         let retrials = 0;
         let currentElement = 0;
         let totalElementos = hrefsPaginas.length;
-        const listaAcordeao = [];
+        const listaElementos = [];
 
         while (currentElement < totalElementos) {
 
@@ -352,7 +352,7 @@ class BasePage {
 
 
                 const teste = await scrapSingleElement(this, url);
-                listaAcordeao.push(teste)
+                listaElementos.push(teste)
                 currentElement++;
             }
 
@@ -364,10 +364,11 @@ class BasePage {
                 }
                 else{
                     console.log("Erro ao pegar acordeao " + currentElement + " da página, tentando novamente")
+                    console.error(error)
                 }
             }
         }
-        return listaAcordeao;
+        return listaElementos;
     }
 
     async clickarPrimeiroAcordeao() {
@@ -410,8 +411,15 @@ class BasePage {
         return texto;
     }
     async getInteiroTeorPuro(){
+        try{
+        // TODO: eu não sei o que esse icone de teor puro faz, mas o path nao foi setado por algum motivo
         const texto = await this.getTextUsingSelector(this.pathInteiroTeorPuro);
         return texto;
+        }
+        catch(e){
+            console.error("Erro ao buscar inteiro teor puro")
+            throw e;
+        }
     }
 
     async irPaginaAcompanhamentoProcessual(retry = true) {

@@ -167,9 +167,9 @@ const scrapingAcordeao = async () => {
         const totalPaginas = 1;
 
         while (currentPage <= totalPaginas) {
-            const acordeaoPagina = await PageAcordeao.scrapAllDocumentsInPage(scrapSingleAcordeao)
+            const acordeaoPaginas = await PageAcordeao.scrapAllDocumentsInPage(scrapSingleAcordeao)
            
-            listaAcordeao = listaAcordeao.concat(acordeaoPagina);
+            listaAcordeao.push(...acordeaoPaginas);
             currentPage++;
             //TODO: colocar delay aqui
         }
