@@ -2,7 +2,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const controllerRouter = require('./router.js')
-const chrome = require('selenium-webdriver/chrome');
 
 const scrapAcordao = require('./scrapAcordeao.js');
 const scrapMonocraticas = require('./scrapMonocraticas.js');

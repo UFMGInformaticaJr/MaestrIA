@@ -1,5 +1,5 @@
 var webdriver = require('selenium-webdriver');
-const { Builder, By, until, Key } = require('selenium-webdriver');
+const { Builder, By, until, Key, Capabilities } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fsp = require('fs').promises
 
@@ -14,6 +14,9 @@ class BasePage {
     botaoInteiroTeor = '//*[@id="mat-checkbox-3-input"]'
     inputPesquisa = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input';
     inputSelecaoMonocratica  = '//*[@id="mat-radio-5"]/label/div[1]/div[1]'
+    // pathProximaPagina = '//*[@id="mat-input-179"]';
+    urlInicial = '';
+    
 
     //botao final de pesquisa no menu inicial
     botaoPesquisar = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[2]/button[2]'
@@ -36,6 +39,7 @@ class BasePage {
     pathIconeAcompanhamentoProcessual = '';
     pathIconeInteiroTeor = '';
     pathInteiroTeorPuro = '';
+    pathTotalPaginas = '';
 
     //elementos na pagina de acompanhamento processual
     pathNumeroCnj = '';
@@ -45,13 +49,14 @@ class BasePage {
     pathTribunalOrigemAcompanhamentoProcessual = ''
 
     constructor() {
-        const headless = false
-        var driver = new webdriver.Builder().forBrowser('chrome')
+        const headless = false;
+        // var driver = new Builder().usingServer('http://localhost:4444').withCapabilities(Capabilities.chrome())
+        var driver = new Builder().forBrowser('chrome')
         if (headless) {
 
             const chromeOptions = new chrome.Options();
             const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
-            //chromeOptions.addArguments(`user-agent=${user_agent}`)
+            chromeOptions.addArguments(`user-agent=${user_agent}`)
             chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
             chromeOptions.addArguments('--ignore-certificate-errors')
             chromeOptions.addArguments('--allow-running-insecure-content')
@@ -68,7 +73,7 @@ class BasePage {
                 height: 720
             };
 
-            driver = driver.setChromeOptions(chromeOptions.headless().windowSize(screen));
+            driver = driver.setChromeOptions(chromeOptions);
 
         }
         driver = driver.build();
@@ -334,7 +339,6 @@ class BasePage {
     }
 
 
-
     async scrapAllDocumentsInPage(scrapSingleElement = async (basePage, url) => { throw new Error("scrapSingleElement not implemented") }) {
     
         const hrefsPaginas = await this.getAllDocumentsInPage();
@@ -348,7 +352,7 @@ class BasePage {
             try {
                 const url = hrefsPaginas[currentElement];
 
-                console.log("Pegando acordeao " + currentElement + " da página ")
+                console.log("Pegando elemento " + currentElement + " da página ")
 
 
                 const teste = await scrapSingleElement(this, url);
@@ -367,6 +371,7 @@ class BasePage {
                     console.error(error)
                 }
             }
+            driver.sleep(1000); //esperar 1 segundo para evitar sobrecarregar o site e parar de dar o bug de nao achar a janela
         }
         return listaElementos;
     }
@@ -493,6 +498,28 @@ class BasePage {
         }
 
     }
+
+    async getTotalPaginas() {
+        var texto = await this.getTextUsingSelector(this.pathTotalPaginas);
+        texto = texto.split(" ")[1];
+        return texto;
+    }
+
+    async goToNextPage(currentPage) {
+        
+        let urlProximaPagina = await this.alterarPagina(this.urlInicial, currentPage);
+
+        console.log("Acessando página " + urlProximaPagina);
+        await this.go_to_url(urlProximaPagina);
+    }
+
+    async getCurrentUrl() {
+        return await driver.getCurrentUrl();
+    }
+
+    async  alterarPagina(url, numPagina) {
+        return url.replace(/page=\d+/, `page=${numPagina}`);
+      }
 
 }
 

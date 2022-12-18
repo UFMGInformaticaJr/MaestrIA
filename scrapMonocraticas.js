@@ -14,6 +14,8 @@ const scrapingSetup = async (PageMonocratica) => {
 
     //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
     await PageMonocratica.inserirDatas()
+
+    return await PageMonocratica.getCurrentUrl();
 };
 
 
@@ -110,18 +112,30 @@ async function scrapMonocratica() {
     try {
         PageMonocratica = new PageMonocraticaClass();
 
-        await scrapingSetup(PageMonocratica);
+       
+        var linkInicial = await scrapingSetup(PageMonocratica);
+        PageMonocratica.setUrlInicial(linkInicial);
 
-        const totalPaginas = 1;
+        let totalPaginas =  await PageMonocratica.getTotalPaginas();
+        console.log("Total de Paginas " + totalPaginas)
 
-     
+        totalPaginas = 2;
+
+
+        console.log("Página " + currentPage + " de " + totalPaginas )
         while (currentPage <= totalPaginas) {
             const monocraticaPage = await PageMonocratica.scrapAllDocumentsInPage(scrapSingleMonocratica);
             listaMonocratica.push(...monocraticaPage);
             currentPage++;
+            
+            if(currentPage != totalPaginas){
+                console.log("Página " + currentPage + " de " + totalPaginas )
+                await PageMonocratica.goToNextPage(currentPage);
+            }
+          
         }
 
-        console.log(listaMonocratica);
+        // console.log(listaMonocratica);
 
         return listaMonocratica;
     }catch (error ){
