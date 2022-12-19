@@ -14,6 +14,7 @@ class AcordeaoPage extends BasePage{
     pathDecisaoJurisprudencia = '//*[@id="mat-tab-content-0-0"]/div/div/div[6]/div';
     pathIconeAcompanhamentoProcessual = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[1]';
     pathIconeInteiroTeor =  '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]';
+    pathTotalPaginas = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/paginator/nav/div/span'; 
 
     pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
 
@@ -90,6 +91,9 @@ class AcordeaoPage extends BasePage{
         return dados;
 
         
-    }    
+    }   
+    async setUrlInicial(urlInicial){
+        this.urlInicial = urlInicial;
+    }
 }
 module.exports = AcordeaoPage;

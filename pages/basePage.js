@@ -49,31 +49,41 @@ class BasePage {
     pathTribunalOrigemAcompanhamentoProcessual = ''
 
     constructor() {
-        const headless = false;
+        const headless = true;
         // var driver = new Builder().usingServer('http://localhost:4444').withCapabilities(Capabilities.chrome())
         var driver = new Builder().forBrowser('chrome')
         if (headless) {
 
             const chromeOptions = new chrome.Options();
-            const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
-            chromeOptions.addArguments(`user-agent=${user_agent}`)
-            chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
-            chromeOptions.addArguments('--ignore-certificate-errors')
-            chromeOptions.addArguments('--allow-running-insecure-content')
-            chromeOptions.addArguments("--disable-extensions")
-            chromeOptions.addArguments("--proxy-server='direct://'")
-            chromeOptions.addArguments("--proxy-bypass-list=*")
+            // const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
+            // chromeOptions.addArguments(`user-agent=${user_agent}`)
+            // chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
+            // chromeOptions.addArguments('--ignore-certificate-errors')
+            // chromeOptions.addArguments('--allow-running-insecure-content')
+            // chromeOptions.addArguments("--disable-extensions")
+            // chromeOptions.addArguments("--proxy-server='direct://'")
+            // chromeOptions.addArguments("--proxy-bypass-list=*")
+            // chromeOptions.addArguments("--disable-infobars")
+            // chromeOptions.addArguments("--disable-dev-shm-usage")
+            // chromeOptions.addArguments("--notifications")
 
-            chromeOptions.addArguments('--disable-gpu')
-            chromeOptions.addArguments('--disable-dev-shm-usage')
-            chromeOptions.addArguments('--no-sandbox')
+            // chromeOptions.addArguments('--disable-gpu')
+            // chromeOptions.addArguments('--disable-dev-shm-usage')
+            // chromeOptions.addArguments('--no-sandbox')
+
+            //ailton
+            chromeOptions.addArguments('--headless');
+            chromeOptions.addArguments('--disable-infobars');
+            chromeOptions.addArguments('--disable-notifications');
+            chromeOptions.addArguments('--disable-dev-shm-usage');
+            chromeOptions.addArguments('--no-sandbox');
 
             const screen = {
                 width: 1280,
                 height: 720
             };
 
-            driver = driver.setChromeOptions(chromeOptions);
+            driver = driver.setChromeOptions(chromeOptions.headless().windowSize(screen));
 
         }
         driver = driver.build();
