@@ -1,5 +1,5 @@
 var webdriver = require('selenium-webdriver');
-const { Builder, By, until, Key } = require('selenium-webdriver');
+const { Builder, By, until, Key, Capabilities } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fsp = require('fs').promises
 
@@ -13,6 +13,10 @@ class BasePage {
     botaoBuscaRadicais = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div/input';
     botaoInteiroTeor = '//*[@id="mat-checkbox-3-input"]'
     inputPesquisa = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input';
+    inputSelecaoMonocratica  = '//*[@id="mat-radio-5"]/label/div[1]/div[1]'
+    // pathProximaPagina = '//*[@id="mat-input-179"]';
+    urlInicial = '';
+    
 
     //botao final de pesquisa no menu inicial
     botaoPesquisar = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[2]/button[2]'
@@ -34,32 +38,45 @@ class BasePage {
     pathDecisaoJurisprudencia = '';
     pathIconeAcompanhamentoProcessual = '';
     pathIconeInteiroTeor = '';
+    pathInteiroTeorPuro = '';
+    pathTotalPaginas = '';
 
     //elementos na pagina de acompanhamento processual
-    pathNumeroCnpj = '';
+    pathNumeroCnj = '';
     pathAssuntoAcompanhamentoProcessual = ''
     pathUrlProcessoTribunalAcompanhamentoProcessual = ''
     pathNumeroOrigemAcompanhamentoProcessual = ''
     pathTribunalOrigemAcompanhamentoProcessual = ''
 
     constructor() {
-        const headless = false
-        var driver = new webdriver.Builder().forBrowser('chrome')
+        const headless = true;
+        // var driver = new Builder().usingServer('http://localhost:4444').withCapabilities(Capabilities.chrome())
+        var driver = new Builder().forBrowser('chrome')
         if (headless) {
 
             const chromeOptions = new chrome.Options();
-            const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
-            //chromeOptions.addArguments(`user-agent=${user_agent}`)
-            chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
-            chromeOptions.addArguments('--ignore-certificate-errors')
-            chromeOptions.addArguments('--allow-running-insecure-content')
-            chromeOptions.addArguments("--disable-extensions")
-            chromeOptions.addArguments("--proxy-server='direct://'")
-            chromeOptions.addArguments("--proxy-bypass-list=*")
+            // const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
+            // chromeOptions.addArguments(`user-agent=${user_agent}`)
+            // chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
+            // chromeOptions.addArguments('--ignore-certificate-errors')
+            // chromeOptions.addArguments('--allow-running-insecure-content')
+            // chromeOptions.addArguments("--disable-extensions")
+            // chromeOptions.addArguments("--proxy-server='direct://'")
+            // chromeOptions.addArguments("--proxy-bypass-list=*")
+            // chromeOptions.addArguments("--disable-infobars")
+            // chromeOptions.addArguments("--disable-dev-shm-usage")
+            // chromeOptions.addArguments("--notifications")
 
-            chromeOptions.addArguments('--disable-gpu')
-            chromeOptions.addArguments('--disable-dev-shm-usage')
-            chromeOptions.addArguments('--no-sandbox')
+            // chromeOptions.addArguments('--disable-gpu')
+            // chromeOptions.addArguments('--disable-dev-shm-usage')
+            // chromeOptions.addArguments('--no-sandbox')
+
+            //ailton
+            chromeOptions.addArguments('--headless');
+            chromeOptions.addArguments('--disable-infobars');
+            chromeOptions.addArguments('--disable-notifications');
+            chromeOptions.addArguments('--disable-dev-shm-usage');
+            chromeOptions.addArguments('--no-sandbox');
 
             const screen = {
                 width: 1280,
@@ -77,6 +94,14 @@ class BasePage {
             driver.manage().window().maximize()
         }
 
+    }
+    async titleCase(str) {
+        return str.toLowerCase().split(' ').map(function(word) {
+            if(word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos' ){
+                return word;
+            }
+            return (word.charAt(0).toUpperCase() + word.slice(1));
+        }).join(' ');
     }
 
     async go_to_url(theURL) {
@@ -223,7 +248,7 @@ class BasePage {
 
     }
 
-    async setUpSearchOptions(type = 'acordeao') {
+    async setUpSearchOptions(type) {
         try {
             let elemento
 
@@ -236,7 +261,12 @@ class BasePage {
 
             await this.clickByXpath(this.iconePesquisaAvancada);
 
+            await driver.sleep(1000);
 
+            if(type == 'monocratica'){
+                elemento = await this.getElementByXpath(this.inputSelecaoMonocratica);
+                driver.executeScript("arguments[0].click();", elemento);
+            }
 
             // DESABILITA BUSCA ENTRE ASPAS
             elemento = await this.getElementByXpath(this.botaoBuscaEntreAspas);
@@ -258,6 +288,7 @@ class BasePage {
             let searchQuery;
 
             if (type == 'monocraticas' || type == 'monocratica') {
+             
                 searchQuery = 'monocratica'
             }
             else if (type == 'acordeao') {
@@ -318,23 +349,24 @@ class BasePage {
     }
 
 
-    async scrapAllDocumentsInPage(scrapSingleElement = (PageAcordeao, url) => {}) {
+    async scrapAllDocumentsInPage(scrapSingleElement = async (basePage, url) => { throw new Error("scrapSingleElement not implemented") }) {
     
         const hrefsPaginas = await this.getAllDocumentsInPage();
         let retrials = 0;
         let currentElement = 0;
         let totalElementos = hrefsPaginas.length;
-        const listaAcordeao = [];
+        const listaElementos = [];
 
         while (currentElement < totalElementos) {
 
             try {
                 const url = hrefsPaginas[currentElement];
 
-                console.log("Pegando acordeao " + currentElement + " da página ")
+                console.log("Pegando elemento " + currentElement + " da página ")
+
 
                 const teste = await scrapSingleElement(this, url);
-                listaAcordeao.push(teste)
+                listaElementos.push(teste)
                 currentElement++;
             }
 
@@ -346,10 +378,12 @@ class BasePage {
                 }
                 else{
                     console.log("Erro ao pegar acordeao " + currentElement + " da página, tentando novamente")
+                    console.error(error)
                 }
             }
+            driver.sleep(1000); //esperar 1 segundo para evitar sobrecarregar o site e parar de dar o bug de nao achar a janela
         }
-        return listaAcordeao;
+        return listaElementos;
     }
 
     async clickarPrimeiroAcordeao() {
@@ -391,11 +425,21 @@ class BasePage {
         const texto = await this.getTextUsingSelector(this.pathDecisaoJurisprudencia);
         return texto;
     }
+    async getInteiroTeorPuro(){
+        try{
+        const texto = await this.getTextUsingSelector(this.pathInteiroTeorPuro);
+        return texto;
+        }
+        catch(e){
+            console.error("Erro ao buscar inteiro teor puro")
+            throw e;
+        }
+    }
 
     async irPaginaAcompanhamentoProcessual(retry = true) {
         try {
             const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual, 5000);
-
+            console.log('Acessando página de acompanhamento processual')
             await elemento.click();
 
             //mudar para a nova aba
@@ -419,8 +463,8 @@ class BasePage {
 
     }
 
-    async getCnpjCruAcompanhamentoProcessual() {
-        const elemento = await this.selectAndWait(this.pathNumeroCnpj, 3000);
+    async getCnjCruAcompanhamentoProcessual() {
+        const elemento = await this.selectAndWait(this.pathNumeroCnj, 3000);
         const texto = await elemento.getText();
 
         return texto;
@@ -464,6 +508,28 @@ class BasePage {
         }
 
     }
+
+    async getTotalPaginas() {
+        var texto = await this.getTextUsingSelector(this.pathTotalPaginas);
+        texto = texto.split(" ")[1];
+        return texto;
+    }
+
+    async goToNextPage(currentPage) {
+        
+        let urlProximaPagina = await this.alterarPagina(this.urlInicial, currentPage);
+
+        console.log("Acessando página " + urlProximaPagina);
+        await this.go_to_url(urlProximaPagina);
+    }
+
+    async getCurrentUrl() {
+        return await driver.getCurrentUrl();
+    }
+
+    async  alterarPagina(url, numPagina) {
+        return url.replace(/page=\d+/, `page=${numPagina}`);
+      }
 
 }
 

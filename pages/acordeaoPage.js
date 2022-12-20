@@ -14,10 +14,11 @@ class AcordeaoPage extends BasePage{
     pathDecisaoJurisprudencia = '//*[@id="mat-tab-content-0-0"]/div/div/div[6]/div';
     pathIconeAcompanhamentoProcessual = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[1]';
     pathIconeInteiroTeor =  '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]';
+    pathTotalPaginas = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/paginator/nav/div/span'; 
 
     pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
 
-    pathNumeroCnpj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
+    pathNumeroCnj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
     pathAssuntoAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li'
     
     pathNumeroOrigemAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]'
@@ -90,6 +91,9 @@ class AcordeaoPage extends BasePage{
         return dados;
 
         
-    }    
+    }   
+    async setUrlInicial(urlInicial){
+        this.urlInicial = urlInicial;
+    }
 }
 module.exports = AcordeaoPage;
