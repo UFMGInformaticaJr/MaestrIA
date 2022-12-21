@@ -1,3 +1,5 @@
+const { time } = require('console');
+const { query } = require('express');
 var webdriver = require('selenium-webdriver');
 const { Builder, By, until, Key, Capabilities } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
@@ -13,10 +15,13 @@ class BasePage {
     botaoBuscaRadicais = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div/input';
     botaoInteiroTeor = '//*[@id="mat-checkbox-3-input"]'
     inputPesquisa = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input';
-    inputSelecaoMonocratica  = '//*[@id="mat-radio-5"]/label/div[1]/div[1]'
+    inputSelecaoMonocratica = '//*[@id="mat-radio-5"]/label/div[1]/div[1]'
     // pathProximaPagina = '//*[@id="mat-input-179"]';
-    urlInicial = '';
-    
+    //armazena a url da pagina de busca, para mantermos os parametros
+    urlInicialPagina = '';
+    //desnecessario, se ele nao achar nenhum link valido vai parar automatico
+    //textoNenhumResultado = '//*[@id="scrollId"]/div/div/div[2]/div/div/div/span'
+
 
     //botao final de pesquisa no menu inicial
     botaoPesquisar = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[2]/button[2]'
@@ -49,7 +54,7 @@ class BasePage {
     pathTribunalOrigemAcompanhamentoProcessual = ''
 
     constructor() {
-        const headless = true;
+        const headless = false;
         // var driver = new Builder().usingServer('http://localhost:4444').withCapabilities(Capabilities.chrome())
         var driver = new Builder().forBrowser('chrome')
         if (headless) {
@@ -87,7 +92,7 @@ class BasePage {
 
         }
         driver = driver.build();
-        driver.manage().setTimeouts({ implicit: (10000) });
+        driver.manage().setTimeouts({ implicit: (2000) });
         global.driver = driver;
         if (!headless) {
 
@@ -96,8 +101,8 @@ class BasePage {
 
     }
     async titleCase(str) {
-        return str.toLowerCase().split(' ').map(function(word) {
-            if(word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos' ){
+        return str.toLowerCase().split(' ').map(function (word) {
+            if (word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos') {
                 return word;
             }
             return (word.charAt(0).toUpperCase() + word.slice(1));
@@ -125,7 +130,7 @@ class BasePage {
         }
         catch (err) {
             console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
-            console.error(err.stack);
+            //console.error(err.stack);
             throw err;
         }
     }
@@ -200,7 +205,7 @@ class BasePage {
     }
 
     cleanText(text) {
-        return text.replace(/(\r\n|\n|\r)/gm, " ").trim();
+        return text?.replace(/(\r\n|\n|\r)/gm, " ").trim();
     }
 
     async waitUntilElementIsVisible(element, timeout = 3000) {
@@ -212,27 +217,20 @@ class BasePage {
     }
 
     async selectAndWait(xpath, timeout = 3000, mode = 'visible') {
-        const element = await this.getElementByXpath(xpath);
+        try{
+        await driver.wait(until.elementLocated(By.xpath(xpath)), timeout);
+        }catch(err){
+            console.log("timeout error para elemento ", xpath)
+        }
+        return await this.getElementByXpath(xpath);
 
         //let el = await driver.findElement(By.xpath(xpath));
         //await driver.wait(until.elementIsVisible(el),100);
 
-        if (!element)
-            throw new Error(`Element ${xpath} not found`);
 
-        if (mode === 'visible') {
-            await this.waitUntilElementIsVisible(element, timeout);
-            return element;
-        }
-        else if (mode === 'enabled') {
-            await this.waitUntilElementIsEnabled(element, timeout);
-            return element;
-        }
-        else {
-            throw new Error('Invalid wait mode');
 
-        }
     }
+
 
     async getWindowHandle() {
         return await driver.getWindowHandle();
@@ -263,7 +261,7 @@ class BasePage {
 
             await driver.sleep(1000);
 
-            if(type == 'monocratica'){
+            if (type == 'monocratica') {
                 elemento = await this.getElementByXpath(this.inputSelecaoMonocratica);
                 driver.executeScript("arguments[0].click();", elemento);
             }
@@ -288,7 +286,7 @@ class BasePage {
             let searchQuery;
 
             if (type == 'monocraticas' || type == 'monocratica') {
-             
+
                 searchQuery = 'monocratica'
             }
             else if (type == 'acordeao') {
@@ -311,7 +309,49 @@ class BasePage {
             throw err;
         }
     }
+    async criarNovaUrlComParametro(dicionarioQueryValores, url = "") {
+        if (url == "") {
+            url = await driver.getCurrentUrl();
+        }
+
+        const urlParams = new URLSearchParams(url.split('?')[1]);
+
+        // para cada entrada, setar chave e url
+        for (let key in dicionarioQueryValores) {
+            urlParams.set(key, dicionarioQueryValores[key]);
+        }
+
+        return (url.split('?')[0] + '?' + urlParams.toString());
+    }
+
+
+
+
+    async inserirPaginaEDatasNaUrl(paginaInicial = 10, dataInicio = '01/01/2000', dataFim = '01/01/2021') {
+
+
+        //deixar apenas numeros na data
+        dataInicio = dataInicio.replace(/\D/g, '');
+        dataFim = dataFim.replace(/\D/g, '');
+
+        const intervalo = dataInicio + '-' + dataFim;
+
+
+        const novasQueries = {
+            'page': paginaInicial,
+            'julgamento_data': intervalo
+        }
+
+        const urlComParametros = await this.criarNovaUrlComParametro(novasQueries);
+
+        return urlComParametros;
+    }
+
     async inserirDatas(dataJulgamento = '01/01/2000', dataPublicacao = '01/01/2021') {
+
+
+
+
 
         const inputInicio = await this.selectAndWait(this.inputInicioDataJulgamento, 4000);
 
@@ -328,7 +368,13 @@ class BasePage {
     }
 
     async getAllDocumentsInPage() {
-        await this.selectAndWait(this.primeiroLink, 3000);
+       /* try {
+            await this.selectAndWait(this.primeiroLink, 3000);
+        }
+        catch (err) {
+            console.log("Não foi possível selecionar o primeiro link por algum motivo")
+        }
+        */
         const allLinks = await driver.findElements(By.css("a"));
 
         //Todos seguem esse padrão, seja monocratica ou acordeao
@@ -350,11 +396,12 @@ class BasePage {
 
 
     async scrapAllDocumentsInPage(scrapSingleElement = async (basePage, url) => { throw new Error("scrapSingleElement not implemented") }) {
-    
+
         const hrefsPaginas = await this.getAllDocumentsInPage();
         let retrials = 0;
         let currentElement = 0;
         let totalElementos = hrefsPaginas.length;
+        
         const listaElementos = [];
 
         while (currentElement < totalElementos) {
@@ -362,10 +409,12 @@ class BasePage {
             try {
                 const url = hrefsPaginas[currentElement];
 
-                console.log("Pegando elemento " + currentElement + " da página ")
+                console.log("Pegando elemento " + currentElement + " da página com url " + url)
+
 
 
                 const teste = await scrapSingleElement(this, url);
+                //TODO: por algum motivo isso da referencia circular
                 listaElementos.push(teste)
                 currentElement++;
             }
@@ -376,7 +425,7 @@ class BasePage {
                     console.log("Erros por página excedidos")
                     throw error
                 }
-                else{
+                else {
                     console.log("Erro ao pegar acordeao " + currentElement + " da página, tentando novamente")
                     console.error(error)
                 }
@@ -425,12 +474,12 @@ class BasePage {
         const texto = await this.getTextUsingSelector(this.pathDecisaoJurisprudencia);
         return texto;
     }
-    async getInteiroTeorPuro(){
-        try{
-        const texto = await this.getTextUsingSelector(this.pathInteiroTeorPuro);
-        return texto;
+    async getInteiroTeorPuro() {
+        try {
+            const texto = await this.getTextUsingSelector(this.pathInteiroTeorPuro);
+            return texto;
         }
-        catch(e){
+        catch (e) {
             console.error("Erro ao buscar inteiro teor puro")
             throw e;
         }
@@ -439,7 +488,7 @@ class BasePage {
     async irPaginaAcompanhamentoProcessual(retry = true) {
         try {
             const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual, 5000);
-            console.log('Acessando página de acompanhamento processual')
+            //console.log('Acessando página de acompanhamento processual')
             await elemento.click();
 
             //mudar para a nova aba
@@ -464,7 +513,7 @@ class BasePage {
     }
 
     async getCnjCruAcompanhamentoProcessual() {
-        const elemento = await this.selectAndWait(this.pathNumeroCnj, 3000);
+        const elemento = await this.selectAndWait(this.pathNumeroCnj, 6000);
         const texto = await elemento.getText();
 
         return texto;
@@ -510,14 +559,31 @@ class BasePage {
     }
 
     async getTotalPaginas() {
-        var texto = await this.getTextUsingSelector(this.pathTotalPaginas);
-        texto = texto.split(" ")[1];
-        return texto;
-    }
+        try{
+            var elemento = await this.getElementByXpath(this.pathTotalPaginas);
+       // var texto = await this.getTextUsingSelector(this.pathTotalPaginas);
+       let texto = await elemento.getText();
+       texto = texto?.split(" ")[1];
 
-    async goToNextPage(currentPage) {
+        return texto;
+        }
+        catch(e){
+            console.error("Não há paginas para a consulta")
+           
+            return 0;
+        }
         
-        let urlProximaPagina = await this.alterarPagina(this.urlInicial, currentPage);
+    }
+    setUrlInicial(urlInicialPagina) {
+        this.urlInicialPagina = urlInicialPagina;
+    }
+    async goToNextPage(newPage) {
+
+        const queryPagina = {
+            'page': newPage
+        }
+
+        let urlProximaPagina = await this.criarNovaUrlComParametro(queryPagina, this.urlInicialPagina)
 
         console.log("Acessando página " + urlProximaPagina);
         await this.go_to_url(urlProximaPagina);
@@ -527,9 +593,10 @@ class BasePage {
         return await driver.getCurrentUrl();
     }
 
-    async  alterarPagina(url, numPagina) {
+    //depreciado
+    async alterarPagina(url, numPagina) {
         return url.replace(/page=\d+/, `page=${numPagina}`);
-      }
+    }
 
 }
 

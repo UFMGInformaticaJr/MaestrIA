@@ -9,8 +9,14 @@ let currentPage = 1;
 let listaMonocratica = [];
 
 
-const scrapingSetup = async (PageMonocratica) => {
+const scrapingSetup = async (PageMonocratica,  paginaInicial = 1, dataInicial, dataFinal) => {
+    //TODO: Isso pode ser extraido para a classe basePage
     await PageMonocratica.setUpSearchOptions();
+
+    const novaUrl = await PageMonocratica.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal)
+    await PageMonocratica.go_to_url(novaUrl)
+
+    return novaUrl;
 
     //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
     await PageMonocratica.inserirDatas()
@@ -101,35 +107,38 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     //clicar no icone de mostrar integra e mudar para a nova aba
     Monocratica.url_pdf = await PageMonocratica.getLinkTeorIntegra();
 
-    console.log(Monocratica)
+    //console.log(Monocratica)
     
 
     return Monocratica;
 
 }
 
-async function scrapMonocratica() {
+async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado) {
     try {
         PageMonocratica = new PageMonocraticaClass();
 
        
-        var linkInicial = await scrapingSetup(PageMonocratica);
+        var linkInicial = await scrapingSetup(PageMonocratica, paginaInicial, dataInicial, dataFinal);
         PageMonocratica.setUrlInicial(linkInicial);
 
         let totalPaginas =  await PageMonocratica.getTotalPaginas();
+        totalPaginas = Number(totalPaginas);
+        callbackTotalPaginas(totalPaginas);
         console.log("Total de Paginas " + totalPaginas)
-
-        totalPaginas = 2;
 
 
         console.log("Página " + currentPage + " de " + totalPaginas )
+        //se o total paginas for 0, não tem nada para fazer
         while (currentPage <= totalPaginas) {
             const monocraticaPage = await PageMonocratica.scrapAllDocumentsInPage(scrapSingleMonocratica);
             listaMonocratica.push(...monocraticaPage);
+            callbackResultado(listaMonocratica);
             currentPage++;
             
             if(currentPage != totalPaginas){
                 console.log("Página " + currentPage + " de " + totalPaginas )
+                callbackPassarPagina(currentPage);
                 await PageMonocratica.goToNextPage(currentPage);
             }
           

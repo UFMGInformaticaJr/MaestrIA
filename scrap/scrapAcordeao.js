@@ -1,5 +1,6 @@
 const AcordeaoObj = require('../acordeao')
 const PageAcordeaoClass = require('../pages/acordeaoPage')
+const { NoSuchElementError } = require('selenium-webdriver/lib/error');
 
 let PageAcordeao = null;
 
@@ -8,20 +9,29 @@ let elementsParsed = 0;
 
 let listaAcordeao = [];
 
-const scrapingSetup = async (PageAcordeao) => {
+const scrapingSetup = async (PageAcordeao, paginaInicial = 1, dataInicial, dataFinal) => {
     await PageAcordeao.setUpSearchOptions();
 
+    const novaUrl = await PageAcordeao.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal)
+    await PageAcordeao.go_to_url(novaUrl)
 
+    return novaUrl;
     //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
-    await PageAcordeao.inserirDatas()
+    // await PageAcordeao.inserirDatas(inicial, final)
 
-    return await PageAcordeao.getCurrentUrl();
+    // return await PageAcordeao.getCurrentUrl();
 
     //aqui deveria construir um json com as infos do scraping
 
 }
 
 const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
+
+    //teste de sanidade
+    if (! linkAcordeao instanceof String) {
+        console.error("linkAcordeao nao eh uma string. Foi passado: ", linkAcordeao)
+        throw new Error("linkAcordeao nao eh uma string. Foi passado: ", linkAcordeao)
+    }
 
     //abrir pagina do acordeao
     await PageAcordeao.openUrlAndWaitForPageLoad(linkAcordeao)
@@ -113,74 +123,110 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
         Acordeao.ementa_full = PageAcordeao.cleanText(ementaDados.ementa_full)
         Acordeao.linha_citacao = PageAcordeao.cleanText(ementaDados.linha_citacao)
     }
+    let pularAcompanhemento = false
 
-    //clicar no icone de acompanhamento processual
-    await PageAcordeao.irPaginaAcompanhamentoProcessual()
+    try {
+        //clicar no icone de acompanhamento processual
+        await PageAcordeao.irPaginaAcompanhamentoProcessual()
+    }
+    catch (error) {
+        if (error instanceof NoSuchElementError) {
+            pularAcompanhemento = true
+            console.log("Acompanhamento não presente!")
+        }
+    }
+
+    if (!pularAcompanhemento) {
+        //existem alguns que o cnj nao existem, o texto diz sem numero unico
+        const textpCnpj = await PageAcordeao.getCnjCruAcompanhamentoProcessual()
+        Acordeao.numero_unico_cnj = textpCnpj.split('-')[0];
 
 
-    //existem alguns que o cnj nao existem, o texto diz sem numero unico
-    const textpCnpj = await PageAcordeao.getCnjCruAcompanhamentoProcessual()
-    Acordeao.numero_unico_cnj = textpCnpj.split('-')[0];
 
+        //pegando assunto
+        Acordeao.assunto = await PageAcordeao.getAssuntoAcompanhamentoProcessual()
+        Acordeao.assunto = PageAcordeao.cleanText(Acordeao.assunto)
 
+        //pegando url do processo
+        Acordeao.url_processo_tribunal = await PageAcordeao.getUrlProcessoTribunalAcompanhamentoProcessual()
 
-    //pegando assunto
-    Acordeao.assunto = await PageAcordeao.getAssuntoAcompanhamentoProcessual()
-    Acordeao.assunto = PageAcordeao.cleanText(Acordeao.assunto)
+        //pegando número de origem
+        Acordeao.numeros_origem = await PageAcordeao.getNumeroOrigemAcompanhamentoProcessual()
+        Acordeao.numeros_origem = PageAcordeao.cleanText(Acordeao.numero_origem)
 
-    //pegando url do processo
-    Acordeao.url_processo_tribunal = await PageAcordeao.getUrlProcessoTribunalAcompanhamentoProcessual()
+        //pegando tribunal de origem
+        Acordeao.tribunal_origem = await PageAcordeao.getTribunalOrigemAcompanhamentoProcessual()
+        Acordeao.tribunal_origem = PageAcordeao.cleanText(Acordeao.tribunal_origem)
+        Acordeao.tribunal_origem = await PageAcordeao.titleCase(Acordeao.tribunal_origem)
 
-    //pegando número de origem
-    Acordeao.numeros_origem = await PageAcordeao.getNumeroOrigemAcompanhamentoProcessual()
-    Acordeao.numeros_origem = PageAcordeao.cleanText(Acordeao.numero_origem)
-
-    //pegando tribunal de origem
-    Acordeao.tribunal_origem = await PageAcordeao.getTribunalOrigemAcompanhamentoProcessual()
-    Acordeao.tribunal_origem = PageAcordeao.cleanText(Acordeao.tribunal_origem)
-    Acordeao.tribunal_origem = await PageAcordeao.titleCase(Acordeao.tribunal_origem)
-
-    //isso demora DEMAIS por algum motivo
-    await PageAcordeao.returnOldWindow()
-
+        //isso demora DEMAIS por algum motivo
+        await PageAcordeao.returnOldWindow()
+    }
 
     const link_inteiro_teor = await PageAcordeao.getLinkTeorIntegra()
 
     Acordeao.url_inteiro_teor = link_inteiro_teor
 
-    console.log(Acordeao)
+    //console.log(Acordeao)
 
 
     return listaAcordeao;
 }
 
-const scrapingAcordeao = async () => {
+const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPaginas, callbackMudancaDePagina, callbackResultado) => {
     //const driver = await new Builder().forBrowser('chrome').build(); //
     //driver.manage().window().maximize();
+
+
+    //checar se os callbacks foram passados
+    if (callbackTotalPaginas == null) {
+        throw new Error("callbackTotalPaginas não foi passado")
+    }
+    else if (callbackMudancaDePagina == null) {
+        throw new Error("callbackMudancaDePagina não foi passado")
+    }
+    else if (callbackResultado == null) {
+        throw new Error("callbackResultado não foi passado")
+    }
+
+
+
     try {
         PageAcordeao = new PageAcordeaoClass();
 
-        //TODO: colocar método capaz de pegar a contagem de páginas e salvar isso em algum estado interno
-        //TODO: envolver essas páginas em um loop infinito, que vai pegando as páginas e salvando no vetor
-        var linkkInicial = await scrapingSetup(PageAcordeao);
+
+        var linkkInicial = await scrapingSetup(PageAcordeao, paginaInicial, dataInicial, dataFinal);
+        currentPage = paginaInicial;
+        //TODO: verificar aqui se acabou a coleta, isto é, pagina inicial > limite paginas
+        // da pra saber isso vendo o html
+
         PageAcordeao.setUrlInicial(linkkInicial);
 
         let totalPaginas = await PageAcordeao.getTotalPaginas();
+        totalPaginas = Number(totalPaginas);
+
+        callbackTotalPaginas(totalPaginas);
+
         console.log("Total de páginas: " + totalPaginas)
 
         //inicio loop
 
-        totalPaginas = 2;
+        //totalPaginas = 2;
 
         while (currentPage <= totalPaginas) {
+            if(currentPage > 1){
+                console.log("Estou na pagina ", currentPage);
+            }
             const acordeaoPaginas = await PageAcordeao.scrapAllDocumentsInPage(scrapSingleAcordeao)
-           
+
             listaAcordeao.push(...acordeaoPaginas);
             currentPage++;
-            //TODO: colocar delay aqui
+            callbackResultado(listaAcordeao);
 
-            if(currentPage != totalPaginas){
-                console.log("Página " + currentPage + " de " + totalPaginas )
+
+            if (currentPage <= totalPaginas) {
+                console.log("Página " + currentPage + " de " + totalPaginas)
+                callbackMudancaDePagina()
                 await PageAcordeao.goToNextPage(currentPage);
             }
         }
@@ -193,7 +239,7 @@ const scrapingAcordeao = async () => {
     } catch (error) {
         console.log("Salvando screenshot")
         PageAcordeao.takeScreenshot();
-        
+
 
         throw error;
     } finally {

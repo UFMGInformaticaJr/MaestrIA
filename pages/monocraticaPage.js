@@ -2,7 +2,7 @@ var BasePage = require('./basePage');
 
 class MonocraticaPage extends BasePage {
 
-    primeiroLink = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[1]/a';
+    primeiroLink = '//*[@id="result-index-0"]/a';
     pathProcesso = '//*[@id="scrollId"]/div/div[1]/div/div[1]/div[1]/h4[1]'
     pathClasse = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[1]/h4[2]';
     pathRelator = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[1]/h4[3]';
@@ -13,7 +13,7 @@ class MonocraticaPage extends BasePage {
     pathIconeAcompanhamentoProcessual = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[2]/div/mat-icon[1]';
     pathIconeInteiroTeor =  '//*[@id="scrollId"]/div/div[1]/div/div[1]/div[2]/div/mat-icon[2]';
     pathTotalPaginas = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/paginator/nav/div/span';
-    urlInicial= '';
+ 
 
     //pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
 
@@ -31,15 +31,11 @@ class MonocraticaPage extends BasePage {
     }
 
     async getNumeroUnico(){
-        const numeroUnico = await this.getElementByXpath(this.pathNumeroUnico);
+        const numeroUnico = await this.selectAndWait(this.pathNumeroUnico);
         return await numeroUnico.getText();
     }
 
-    async setUrlInicial(urlInicial){
-        this.urlInicial = urlInicial;
-    }
-
-
+    
 }
 
 module.exports = MonocraticaPage;
