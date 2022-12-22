@@ -34,7 +34,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
 
     await PageMonocratica.openUrlAndWaitForPageLoad(linkMonocratica)
    
-    await PageMonocratica.takeScreenshot('ivan_gostoso.png');
+    await PageMonocratica.takeScreenshot('inicio.png');
     //criar novo objeto
 
     const Monocratica = { ...MonocraticaObj };
@@ -88,7 +88,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
 
     //HEADLESS TRAVANDO AQUI
     
-    await PageMonocratica.takeScreenshot('ivan_gostoso.png');
+    await PageMonocratica.takeScreenshot('antes2_pagina.png');
     
     await sleep(6000)
 

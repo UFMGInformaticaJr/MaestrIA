@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const sleep = require('util');
+const sleep = require('util').promisify(setTimeout);
 
 
 class BasePage {
@@ -137,6 +137,8 @@ class BasePage {
         await this.go_to_url(url);
         this.takeScreenshot('paginaCarregada.png');
 
+        await sleep(3000);
+
         //esperar a pagina carregar. Acho que nao é necessário
         //await this.selectAndWait(this.pathProcesso)
     }
@@ -222,6 +224,7 @@ class BasePage {
     async newWindowUrl() {
         const pages = await this.page.browser().pages();
         const newPage = pages.find(p => p !== this.page && p.url() !== 'about:blank');
+        await sleep(3000);
         await newPage.bringToFront();
         this.old_window.push(this.page);
         this.page = newPage;
