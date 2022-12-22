@@ -46,7 +46,6 @@ class RequestService {
   async getID() {
     try{
         const response = await this.api.get('/get-crawler-id');
-        console.log(response.data);
         return response.data;
     }
     catch(error){

@@ -1,21 +1,18 @@
-const { time } = require('console');
-const { query } = require('express');
-var webdriver = require('selenium-webdriver');
-const { Builder, By, until, Key, Capabilities } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
-const fsp = require('fs').promises
+const puppeteer = require('puppeteer');
+const sleep = require('util');
+
 
 class BasePage {
-
+   
     base_url = 'https://jurisprudencia.stf.jus.br/pages/search';
     old_window = [];
 
     iconePesquisaAvancada = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/mat-form-field/div/div[1]/div[4]/div/mat-icon[3]';
-    botaoBuscaEntreAspas = 'html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[2]/label/div/input';
-    botaoBuscaRadicais = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div/input';
+    botaoBuscaEntreAspas = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[2]/label/div';
+    botaoBuscaRadicais = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[1]/div[2]/mat-checkbox[1]/label/div';
     botaoInteiroTeor = '//*[@id="mat-checkbox-3-input"]'
     inputPesquisa = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[2]/div/mat-form-field/div/div[1]/div[3]/input';
-    inputSelecaoMonocratica = '//*[@id="mat-radio-5"]/label/div[1]/div[1]'
+    inputSelecaoMonocratica = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[1]/div/mat-radio-group/span[4]/mat-radio-button/label/div[1]/div[1]'
     // pathProximaPagina = '//*[@id="mat-input-179"]';
     //armazena a url da pagina de busca, para mantermos os parametros
     urlInicialPagina = '';
@@ -31,6 +28,8 @@ class BasePage {
     inputInicioDataJulgamento = '/html/body/app-root/app-home/main/search/div/div/div/div[1]/div[2]/div[3]/div/div[2]/mat-form-field[1]/div/div[1]/div[3]/input'
     inputFimDataJulgamento = '/html/body/app-root/app-home/main/search/div/div/div/div[1]/div[2]/div[3]/div/div[2]/mat-form-field[2]/div/div[1]/div[3]/input'
 
+    //botao na pagina de pesquisa avancada
+    botaoPesquisarAvancado = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[2]/ul/li[1]/a'
 
     //elementos que monocraticas e acordeoes tem em comum na pagina do processo
     primeiroLink = 'sobrecarregar';
@@ -54,103 +53,132 @@ class BasePage {
     pathTribunalOrigemAcompanhamentoProcessual = ''
 
     constructor() {
-        const headless = false;
-        // var driver = new Builder().usingServer('http://localhost:4444').withCapabilities(Capabilities.chrome())
-        var driver = new Builder().forBrowser('chrome')
-        if (headless) {
-
-            const chromeOptions = new chrome.Options();
-            // const user_agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +https://www.google.com/bot.html) Safari/537.36"
-            // chromeOptions.addArguments(`user-agent=${user_agent}`)
-            // chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
-            // chromeOptions.addArguments('--ignore-certificate-errors')
-            // chromeOptions.addArguments('--allow-running-insecure-content')
-            // chromeOptions.addArguments("--disable-extensions")
-            // chromeOptions.addArguments("--proxy-server='direct://'")
-            // chromeOptions.addArguments("--proxy-bypass-list=*")
-            // chromeOptions.addArguments("--disable-infobars")
-            // chromeOptions.addArguments("--disable-dev-shm-usage")
-            // chromeOptions.addArguments("--notifications")
-
-            // chromeOptions.addArguments('--disable-gpu')
-            // chromeOptions.addArguments('--disable-dev-shm-usage')
-            // chromeOptions.addArguments('--no-sandbox')
-
-            //ailton
-            chromeOptions.addArguments('--headless');
-            chromeOptions.addArguments('--disable-infobars');
-            chromeOptions.addArguments('--disable-notifications');
-            chromeOptions.addArguments('--disable-dev-shm-usage');
-            chromeOptions.addArguments('--no-sandbox');
-
-            const screen = {
-                width: 1280,
-                height: 720
-            };
-
-            driver = driver.setChromeOptions(chromeOptions.headless().windowSize(screen));
-
-        }
-        driver = driver.build();
-        driver.manage().setTimeouts({ implicit: (2000) });
-        global.driver = driver;
-        if (!headless) {
-
-            driver.manage().window().maximize()
-        }
-
+        this.browser = null;
+        this.page = null;
+        
     }
-    async titleCase(str) {
-        return str.toLowerCase().split(' ').map(function (word) {
-            if (word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos') {
-                return word;
+
+    async init() {
+        this.browser = await puppeteer.launch({
+            headless: true,
+            defaultViewport: null,
+            args: ['--start-maximized', '--disable-notifications', '--disable-infobars', '--disable-extensions', '--disable-dev-shm-usage', '--no-sandbox']
+        });
+        this.page = await this.browser.newPage();
+        await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36');
+        
+    }
+
+    async setUpSearchOptions(type) {
+        try {
+            let elemento
+
+
+            await this.go_to_url(this.base_url);
+
+            await this.selectAndWait(this.iconePesquisaAvancada, 2000);
+
+            // abre a pesquisa avançada
+            await this.clickByXpath(this.iconePesquisaAvancada);
+
+            if (type == 'monocratica') {
+               await this.clickByXpath(this.inputSelecaoMonocratica);
             }
-            return (word.charAt(0).toUpperCase() + word.slice(1));
-        }).join(' ');
+
+            // DESABILITA BUSCA ENTRE ASPAS
+            await this.clickByXpath(this.botaoBuscaEntreAspas);
+
+            //HABILITA BUSCA POR RADICAIS
+            await this.clickByXpath(this.botaoBuscaRadicais);
+
+            if (type == 'acordeao') {
+                //Clicar em inteiro teor
+                await this.clickByXpath(this.botaoInteiroTeor);
+            }
+
+            //colocar recurso na pesquisa em todos os campos
+            elemento = await this.getElementByXpath(this.inputPesquisa);
+
+            let searchQuery;
+
+            if (type == 'monocraticas' || type == 'monocratica') {
+
+                searchQuery = 'monocratica'
+            }
+            else if (type == 'acordeao') {
+                searchQuery = 'recurso'
+            }
+            else {
+                throw new Error('Invalid search type, must be acordeao or monocratica');
+            }
+            //enviar a query de pesquisa
+            elemento.type(searchQuery);
+
+            //BOTAO PESQUISAR
+            await this.clickByXpath(this.botaoPesquisar);
+
+        }
+        catch (err) {
+            console.error("Erro ao configurar opções de pesquisa")
+
+            throw err;
+        }
     }
+   
 
     async go_to_url(theURL) {
-        const old = await driver.getWindowHandle();
+        const old = this.page.target();
         this.old_window.push(old);
-        await driver.get(theURL);
+        await this.page.goto(theURL);
+        
     }
 
     async openUrlAndWaitForPageLoad(url) {
         await this.go_to_url(url);
+        this.takeScreenshot('paginaCarregada.png');
 
         //esperar a pagina carregar. Acho que nao é necessário
         //await this.selectAndWait(this.pathProcesso)
     }
+
+    async renderizarPagina() {
+        await this.page.waitForSelector('body', { visible: true }, 3000);
+    }
     async enterTextByCss(css, searchText) {
-        await driver.findElement(By.css(css)).sendKeys(searchText);
+        await this.page.findElement(By.css(css)).sendKeys(searchText);
     }
     async getElementByXpath(xpath) {
         try {
-            return await driver.findElement(By.xpath(xpath));
+            return await this.page.waitForSelector(`xpath${xpath}`, { visible: true }, 1000);
         }
         catch (err) {
             console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
-            //console.error(err.stack);
             throw err;
         }
     }
-    async getTextUsingSelector(path, func = this.getElementByXpath) {
-        const elem = await func(path)
-        return elem.getText();
+    async getTextUsingSelector(path) {
+        
+        let element = await this.getElementByXpath(path);
+       
+        return await element.evaluate(element => element.textContent, element)
     }
-    async getInnerTextUsingSelector(path, func = this.getElementByXpath) {
-        const elem = await func(path)
-        return elem.getAttribute('innerText');
+    async getInnerTextUsingSelector(path) {
+        const elem = await this.getElementByXpath(path);
+        return elem.evaluate(element => element.innerText, elem);
     }
     async clickById(id) {
-        await driver.findElement(By.id(id)).click();
+        await this.page.findElement(By.id(id)).click();
     }
     async clickByXpath(xpath) {
-        const elem = await driver.findElement(By.xpath(xpath))
+        const elem = await this.getElementByXpath(xpath);
         await elem.click();
     }
+    async getLinkByXpath(xpath) {
+        const elem = await this.getElementByXpath(xpath);
+        return elem.evaluate(element => element.href, elem);
+    }
     async pressTab(element) {
-        await element.sendKeys(webdriver.Key.TAB);
+        await element.sendKeys(webthis.page.Key.TAB);
     }
 
 
@@ -170,148 +198,88 @@ class BasePage {
         }
     }
     async getContentIfTextExists(text, tag = 'div') {
-        const foundElements = await driver.findElements(By.xpath(`//${tag}[contains(text(), "${text}")]`));
-
-        if (foundElements === null || foundElements.length === 0)
-            return null;
-
         try {
-            let textFound = null;
-            for (const elementos of foundElements) {
-                textFound = elementos.findElement(By.xpath("following-sibling::*"))
+          const elements = await this.page.$$(tag);
+          if (elements.length === 0) return null;
+      
+          let textFound = null;
+          for (const element of elements) {
+            const elementText = await this.page.evaluate(element => element.innerText, element);
+            if (elementText.includes(text)) {
+              textFound = await this.page.evaluate(element => element.nextElementSibling.innerText, element);
+              break;
             }
-
-            return await textFound.getText();
+          }
+      
+          return textFound;
         } catch (err) {
-            console.error(`Erro ao encontrar texto: ${text}`)
-            console.error(err.stack);
-            throw err;
+          console.error(`Erro ao encontrar texto: ${text}`);
+          console.error(err.stack);
+          throw err;
         }
-
-    }
+      }
 
     async newWindowUrl() {
-        const handles = await driver.getAllWindowHandles();
-        const currentWindow = await this.getWindowHandle()
-        this.old_window.push(currentWindow);
-        const newWindowUrl = handles.filter(handle => handle !== currentWindow)[0];
-
-        await driver.switchTo().window(newWindowUrl);
+        const pages = await this.page.browser().pages();
+        const newPage = pages.find(p => p !== this.page && p.url() !== 'about:blank');
+        await newPage.bringToFront();
+        this.old_window.push(this.page);
+        this.page = newPage;
     }
     async returnOldWindow() {
-        const old = this.old_window.pop();
-        driver.close();
-        await driver.switchTo().window(old);
+        const oldPage = this.page;
+        this.page = this.old_window.pop();
+        await oldPage.close();
+        await this.page.bringToFront();
     }
 
     cleanText(text) {
         return text?.replace(/(\r\n|\n|\r)/gm, " ").trim();
     }
+    async titleCase(str) {
+        return str.toLowerCase().split(' ').map(function (word) {
+            if (word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos') {
+                return word;
+            }
+            return (word.charAt(0).toUpperCase() + word.slice(1));
+        }).join(' ');
+    }
 
     async waitUntilElementIsVisible(element, timeout = 3000) {
 
-        await driver.wait(webdriver.until.elementIsVisible(element), timeout);
+        await this.page.wait(webthis.page.until.elementIsVisible(element), timeout);
     }
     async waitUntilElementIsEnabled(element, timeout = 3000) {
-        await driver.wait(webdriver.until.elementIsEnabled(element), timeout);
+        await this.page.wait(webthis.page.until.elementIsEnabled(element), timeout);
     }
 
-    async selectAndWait(xpath, timeout = 3000, mode = 'visible') {
+    async selectAndWait(xpath, timeout) {
         try{
-        await driver.wait(until.elementLocated(By.xpath(xpath)), timeout);
+        await this.page.waitForSelector(`xpath/${xpath}`, { visible: true }, timeout);
         }catch(err){
             console.log("timeout error para elemento ", xpath)
         }
         return await this.getElementByXpath(xpath);
 
-        //let el = await driver.findElement(By.xpath(xpath));
-        //await driver.wait(until.elementIsVisible(el),100);
-
-
+        //let el = await this.page.findElement(By.xpath(xpath));
+        //await this.page.wait(until.elementIsVisible(el),100);
 
     }
 
 
     async getWindowHandle() {
-        return await driver.getWindowHandle();
+        return await this.page.getWindowHandle();
     }
 
     async closeBrowser() {
-        await driver.quit();
+        await this.page.quit();
     }
 
-    async takeScreenshot(filename = "screenshot.png") {
-        let image = await driver.takeScreenshot()
-        await fsp.writeFile(filename, image, 'base64')
 
-    }
-
-    async setUpSearchOptions(type) {
-        try {
-            let elemento
-
-
-            await this.go_to_url(this.base_url);
-
-            await this.selectAndWait(this.iconePesquisaAvancada, 20000);
-
-            // abre a pesquisa avançada
-
-            await this.clickByXpath(this.iconePesquisaAvancada);
-
-            await driver.sleep(1000);
-
-            if (type == 'monocratica') {
-                elemento = await this.getElementByXpath(this.inputSelecaoMonocratica);
-                driver.executeScript("arguments[0].click();", elemento);
-            }
-
-            // DESABILITA BUSCA ENTRE ASPAS
-            elemento = await this.getElementByXpath(this.botaoBuscaEntreAspas);
-            driver.executeScript("arguments[0].click();", elemento);
-
-            //HABILITA BUSCA POR RADICAIS
-            elemento = await this.getElementByXpath(this.botaoBuscaRadicais);
-            driver.executeScript("arguments[0].click();", elemento);
-
-            if (type == 'acordeao') {
-                //Clicar em inteiro teor
-                elemento = await this.getElementByXpath(this.botaoInteiroTeor);
-                driver.executeScript("arguments[0].click();", elemento);
-            }
-
-            //colocar recurso na pesquisa em todos os campos
-            elemento = await this.getElementByXpath(this.inputPesquisa);
-
-            let searchQuery;
-
-            if (type == 'monocraticas' || type == 'monocratica') {
-
-                searchQuery = 'monocratica'
-            }
-            else if (type == 'acordeao') {
-                searchQuery = 'recurso'
-            }
-            else {
-                throw new Error('Invalid search type, must be acordeao or monocratica');
-            }
-
-            elemento.sendKeys(searchQuery) //mudar para variavel posteriormente
-
-            //BOTAO PESQUISAR
-            elemento = await this.getElementByXpath(this.botaoPesquisar);
-            await elemento.click()
-
-        }
-        catch (err) {
-            console.error("Erro ao configurar opções de pesquisa")
-
-            throw err;
-        }
-    }
+   
     async criarNovaUrlComParametro(dicionarioQueryValores, url = "") {
         if (url == "") {
-            url = await driver.getCurrentUrl();
+            url = await this.page.url();
         }
 
         const urlParams = new URLSearchParams(url.split('?')[1]);
@@ -350,20 +318,17 @@ class BasePage {
     async inserirDatas(dataJulgamento = '01/01/2000', dataPublicacao = '01/01/2021') {
 
 
-
-
-
         const inputInicio = await this.selectAndWait(this.inputInicioDataJulgamento, 4000);
 
-        await inputInicio.click()
-        await inputInicio.sendKeys(dataJulgamento)
-        await inputInicio.sendKeys(Key.ENTER)
+        await inputInicio.click();
+        await inputInicio.type(dataJulgamento);
+        await inputInicio.press('Enter');
 
         const inputFinal = await this.selectAndWait(this.inputFimDataJulgamento, 3000);
 
-        await inputFinal.click()
-        await inputFinal.sendKeys(dataPublicacao)
-        await inputFinal.sendKeys(Key.TAB)
+        await inputFinal.click();
+        await inputFinal.type(dataPublicacao);
+        await inputFinal.press('Tab');
 
     }
 
@@ -375,7 +340,7 @@ class BasePage {
             console.log("Não foi possível selecionar o primeiro link por algum motivo")
         }
         */
-        const allLinks = await driver.findElements(By.css("a"));
+        const allLinks = await this.page.findElements(By.css("a"));
 
         //Todos seguem esse padrão, seja monocratica ou acordeao
         const regex = /\/pages\/search\//;
@@ -430,7 +395,7 @@ class BasePage {
                     console.error(error)
                 }
             }
-            driver.sleep(1000); //esperar 1 segundo para evitar sobrecarregar o site e parar de dar o bug de nao achar a janela
+            this.page.sleep(1000); //esperar 1 segundo para evitar sobrecarregar o site e parar de dar o bug de nao achar a janela
         }
         return listaElementos;
     }
@@ -444,7 +409,8 @@ class BasePage {
         await this.selectAndWait(this.pathProcesso);
     }
     async getProcesso() {
-        const processo = await this.getTextUsingSelector(this.pathProcesso);
+        
+        const processo = await this.getTextUsingSelector(this.pathProcesso)
 
         return processo;
     }
@@ -497,7 +463,6 @@ class BasePage {
         catch (e) {
             // geralmente muitos erros acontecem nesse método, então é legal tentar novamente
             if (retry) {
-                await driver.sleep(3000)
                 await this.irPaginaAcompanhamentoProcessual(false);
 
             }
@@ -513,10 +478,10 @@ class BasePage {
     }
 
     async getCnjCruAcompanhamentoProcessual() {
-        const elemento = await this.selectAndWait(this.pathNumeroCnj, 6000);
-        const texto = await elemento.getText();
+        const elemento = await this.selectAndWait(this.pathNumeroUnicoCnj, 2000);
+        const value = await elemento.evaluate(el => el.textContent)
 
-        return texto;
+        return value
     }
 
     async getAssuntoAcompanhamentoProcessual() {
@@ -525,7 +490,7 @@ class BasePage {
     }
 
     async getUrlProcessoTribunalAcompanhamentoProcessual() {
-        return await driver.getCurrentUrl();
+        return await this.page.url();
     }
     async getNumeroOrigemAcompanhamentoProcessual() {
         const numero = await this.getInnerTextUsingSelector(this.pathNumeroOrigemAcompanhamentoProcessual);
@@ -540,14 +505,14 @@ class BasePage {
         //clicar no icone de mostrar integra e mudar para a nova aba
         let url = ''
         try {
+            //TODO VE QUANDO NAO TEM O PDF 
+            // await this.clickByXpath(this.pathIconeInteiroTeor)
+            // await this.newWindowUrl();
+           url =  await this.getLinkByXpath(this.pathIconeInteiroTeor)
+            //await this.page.sleep(3000)
+            // url = await this.page.url();
 
-            await this.clickByXpath(this.pathIconeInteiroTeor)
-            await this.newWindowUrl();
-
-            //await driver.sleep(3000)
-            url = await driver.getCurrentUrl();
-
-            await this.returnOldWindow()
+            // await this.returnOldWindow()
         } catch (error) {
             url = "Não disponível";
 
@@ -590,12 +555,16 @@ class BasePage {
     }
 
     async getCurrentUrl() {
-        return await driver.getCurrentUrl();
+        return await this.page.getCurrentUrl();
     }
 
     //depreciado
     async alterarPagina(url, numPagina) {
         return url.replace(/page=\d+/, `page=${numPagina}`);
+    }
+
+    async takeScreenshot (nomearquivo){
+        await this.page.screenshot({path: nomearquivo});
     }
 
 }

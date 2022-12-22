@@ -8,6 +8,9 @@ const scrapMonocraticas = require('./scrap/scrapMonocraticas.js');
 
 const RequestService = require('./api/request.js')
 
+const takeScreenshot = require('./testPup.js')
+
+
 const app = express();
 
 const port = 3000
@@ -44,6 +47,17 @@ app.get('/request', async (request, response) => {
         console.log(error)
     }
 })
+
+app.get('/teste', async (request, response) => {
+    try {
+       await takeScreenshot();
+      
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+
 
 
 

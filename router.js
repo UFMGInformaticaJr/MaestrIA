@@ -124,7 +124,7 @@ router.post('/start', async (req, res) => {
      */
 
     const tribunal = req.body.tribunal ?? "STF"
-    const tipo = req.body.tipo ?? "acordeao"
+    const tipo = req.body.tipo ?? "monocratica"
     const dataInicial = req.body.dataInicial ?? "01/01/2020"
     const dataFinal = req.body.dataFinal ?? "01/10/2020"
 
