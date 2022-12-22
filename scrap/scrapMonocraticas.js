@@ -59,8 +59,8 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
 
     Monocratica.classe = await PageMonocratica.getClasse();
     Monocratica.classe = await PageMonocratica.titleCase(Monocratica.classe);
-    console.log("classe: " + Monocratica.classe)
-    await sleep(6000)
+    // console.log("classe: " + Monocratica.classe)
+    // await sleep(6000)
 
     Monocratica.relator = await PageMonocratica.getRelator()
     Monocratica.relator = Monocratica.relator?.split('.')[1].trim();
@@ -74,7 +74,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.data_publicacao = await PageMonocratica.getDataPublicacao();
     Monocratica.data_publicacao = Monocratica.data_publicacao.split(' ')[1];
     console.log(Monocratica.data_publicacao)
-    await sleep(6000)
+    await sleep(3000)
     Monocratica.partes = await PageMonocratica.getPartes();
     Monocratica.partes = await PageMonocratica.cleanText(Monocratica.partes);
     console.log(Monocratica.partes)
@@ -84,19 +84,18 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     console.log(Monocratica.inteiro_teor_puro)
 
     Monocratica.ementa = Monocratica.inteiro_teor_puro;
-    await sleep(6000)
+    await sleep(2000)
 
     //HEADLESS TRAVANDO AQUI
     
     await PageMonocratica.takeScreenshot('antes2_pagina.png');
     
-    await sleep(6000)
+    await sleep(4000)
 
 
     //ACOMPANHAMENTO PROCESSUAL
 
     await PageMonocratica.irPaginaAcompanhamentoProcessual();
-    await PageMonocratica.renderizarPagina();
 
     await PageMonocratica.takeScreenshot('teste.png');
 
@@ -133,7 +132,8 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     await PageMonocratica.returnOldWindow();
 
     //clicar no icone de mostrar integra e mudar para a nova aba
-    // Monocratica.url_pdf = await PageMonocratica.getLinkTeorIntegra();
+    Monocratica.url_pdf = await PageMonocratica.getLinkTeorIntegra();
+    console.log(Monocratica.url_pdf)
 
     //console.log(Monocratica)
     

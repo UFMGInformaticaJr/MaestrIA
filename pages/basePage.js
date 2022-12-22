@@ -1,4 +1,8 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra') 
+const pluginStealth = require('puppeteer-extra-plugin-stealth') 
+const {executablePath} = require('puppeteer');
+puppeteer.use(pluginStealth())
+
 const sleep = require('util').promisify(setTimeout);
 
 
@@ -60,6 +64,7 @@ class BasePage {
 
     async init() {
         this.browser = await puppeteer.launch({
+            executablePath: executablePath(),
             headless: true,
             defaultViewport: null,
             args: ['--start-maximized', '--disable-notifications', '--disable-infobars', '--disable-extensions', '--disable-dev-shm-usage', '--no-sandbox']
@@ -177,7 +182,7 @@ class BasePage {
     }
     async getLinkByXpath(xpath) {
         const elem = await this.getElementByXpath(xpath);
-        return elem.evaluate(element => element.href, elem);
+        return await elem.evaluate(element => element.href, elem);
     }
     async pressTab(element) {
         await element.sendKeys(webthis.page.Key.TAB);
@@ -222,10 +227,10 @@ class BasePage {
       }
 
     async newWindowUrl() {
-        const pages = await this.page.browser().pages();
-        const newPage = pages.find(p => p !== this.page && p.url() !== 'about:blank');
         await sleep(3000);
-        await newPage.bringToFront();
+        const pages = await this.page.browser().pages();
+        const newPage = await pages[pages.length - 1];
+        await sleep(3000);
         this.old_window.push(this.page);
         this.page = newPage;
     }
@@ -454,29 +459,31 @@ class BasePage {
         }
     }
 
-    async irPaginaAcompanhamentoProcessual(retry = true) {
-        try {
+    async irPaginaAcompanhamentoProcessual() {
+        
+            // let url = await this.getLinkByXpath(this.pathIconeAcompanhamentoProcessual);
+            // console.log("Acessando página de acompanhamento processual  " + url)
             const elemento = await this.selectAndWait(this.pathIconeAcompanhamentoProcessual, 5000);
             //console.log('Acessando página de acompanhamento processual')
             await elemento.click();
 
             //mudar para a nova aba
             await this.newWindowUrl();
-        }
-        catch (e) {
-            // geralmente muitos erros acontecem nesse método, então é legal tentar novamente
-            if (retry) {
-                await this.irPaginaAcompanhamentoProcessual(false);
+      
+        // catch (e) {
+        //     // geralmente muitos erros acontecem nesse método, então é legal tentar novamente
+        //     if (retry) {
+        //         await this.irPaginaAcompanhamentoProcessual(false);
 
-            }
-            else {
-                console.log(e)
-                console.error('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
-                e.message + - ('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
-                throw e;
+        //     }
+        //     else {
+        //         console.log(e)
+        //         console.error('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
+        //         e.message + - ('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
+        //         throw e;
 
-            }
-        }
+        //     }
+        // }
 
     }
 
@@ -509,13 +516,11 @@ class BasePage {
         let url = ''
         try {
             //TODO VE QUANDO NAO TEM O PDF 
-            // await this.clickByXpath(this.pathIconeInteiroTeor)
-            // await this.newWindowUrl();
-           url =  await this.getLinkByXpath(this.pathIconeInteiroTeor)
-            //await this.page.sleep(3000)
-            // url = await this.page.url();
+            await this.clickByXpath(this.pathIconeInteiroTeor)
+            await this.newWindowUrl();
+            url = await this.page.url();
 
-            // await this.returnOldWindow()
+            await this.returnOldWindow()
         } catch (error) {
             url = "Não disponível";
 
