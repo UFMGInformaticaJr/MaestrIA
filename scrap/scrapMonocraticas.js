@@ -15,7 +15,6 @@ let listaMonocratica = [];
 const scrapingSetup = async (PageMonocratica,  paginaInicial = 1, dataInicial, dataFinal) => {
     //TODO: Isso pode ser extraido para a classe basePage
     await PageMonocratica.setUpSearchOptions();
-
     const novaUrl = await PageMonocratica.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal)
     await PageMonocratica.go_to_url(novaUrl)
 
@@ -65,23 +64,22 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.relator = await PageMonocratica.getRelator()
     Monocratica.relator = Monocratica.relator?.split('.')[1].trim();
     Monocratica.relator = await PageMonocratica.titleCase(Monocratica.relator);
-    console.log("relator: " + Monocratica.relator)
+    
 
     Monocratica.data_julgamento = await PageMonocratica.getDataJulgamento();
     Monocratica.data_julgamento = Monocratica.data_julgamento.split(' ')[1];
-    console.log(Monocratica.data_julgamento)
+ 
 
     Monocratica.data_publicacao = await PageMonocratica.getDataPublicacao();
     Monocratica.data_publicacao = Monocratica.data_publicacao.split(' ')[1];
-    console.log(Monocratica.data_publicacao)
-    await sleep(3000)
+
+    // await sleep(3000)
     Monocratica.partes = await PageMonocratica.getPartes();
     Monocratica.partes = await PageMonocratica.cleanText(Monocratica.partes);
-    console.log(Monocratica.partes)
+
     
     Monocratica.inteiro_teor_puro = await PageMonocratica.getInteiroTeorPuro();
     Monocratica.inteiro_teor_puro = PageMonocratica.cleanText(Monocratica.inteiro_teor_puro);
-    console.log(Monocratica.inteiro_teor_puro)
 
     Monocratica.ementa = Monocratica.inteiro_teor_puro;
     await sleep(2000)
@@ -102,30 +100,28 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     //pegando número unico
     Monocratica.numero_unico_cnj = await PageMonocratica.getCnjCruAcompanhamentoProcessual();
     Monocratica.numero_unico_cnj = Monocratica.numero_unico_cnj.split(' ')[2];
-    console.log(Monocratica.numero_unico_cnj)
 
     await PageMonocratica.clickByXpath(PageMonocratica.botaoPesquisarAvancado)
 
     //pegando assunto
     Monocratica.assunto = await PageMonocratica.getAssuntoAcompanhamentoProcessual();
     Monocratica.assunto = await PageMonocratica.cleanText(Monocratica.assunto);
-    console.log(Monocratica.assunto)
+
 
     //pegando url do processo
     Monocratica.url_processo_tribunal = await PageMonocratica.getUrlProcessoTribunalAcompanhamentoProcessual();
-    console.log(Monocratica.url_processo_tribunal)
+  
 
 
     //pegando número de origem
     Monocratica.numeros_origem = await PageMonocratica.getNumeroOrigemAcompanhamentoProcessual();
     Monocratica.numeros_origem = await PageMonocratica.cleanText(Monocratica.numeros_origem);
-    console.log(Monocratica.numeros_origem)
 
     //pegando tribunal de origem
     Monocratica.tribunal_origem = await PageMonocratica.getTribunalOrigemAcompanhamentoProcessual();
     Monocratica.tribunal_origem = await PageMonocratica.cleanText(Monocratica.tribunal_origem);
     Monocratica.tribunal_origem = await PageMonocratica.titleCase(Monocratica.tribunal_origem);
-    console.log(Monocratica.tribunal_origem)
+
 
     //voltando para a aba anterior
    
@@ -133,7 +129,6 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
 
     //clicar no icone de mostrar integra e mudar para a nova aba
     Monocratica.url_pdf = await PageMonocratica.getLinkTeorIntegra();
-    console.log(Monocratica.url_pdf)
 
     //console.log(Monocratica)
     
@@ -152,6 +147,7 @@ async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackT
         PageMonocratica.setUrlInicial(linkInicial);
 
         let totalPaginas =  await PageMonocratica.getTotalPaginas();
+        totalPaginas = 2;
         totalPaginas = Number(totalPaginas);
         callbackTotalPaginas(totalPaginas);
         console.log("Total de Paginas " + totalPaginas)
@@ -173,27 +169,15 @@ async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackT
           
         }
 
-        // console.log(listaMonocratica);
+        console.log(listaMonocratica);
 
         return listaMonocratica;
     }catch (error ){
         console.log(error)
     }
-    finally {
-        await driver.quit()
-    }
-
     
 }
 
 
 
-async function teste (){
-    const PageMonocratica = new PageMonocraticaClass();
-    await PageMonocratica.init();
-    const monocratica = await scrapSingleMonocratica(PageMonocratica,'https://jurisprudencia.stf.jus.br/pages/search/despacho1253174/false' );
-    return monocratica; 
-
-}
-
-module.exports = teste;
+module.exports = scrapMonocratica;

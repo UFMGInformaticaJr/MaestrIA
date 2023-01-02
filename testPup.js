@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 
+
 async function takeScreenshot() {
   // Launch a headless Chrome browser
   const browser = await puppeteer.launch({ headless: false });

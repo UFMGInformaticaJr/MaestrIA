@@ -65,12 +65,14 @@ class BasePage {
     async init() {
         this.browser = await puppeteer.launch({
             executablePath: executablePath(),
-            headless: true,
+            headless: false,
             defaultViewport: null,
             args: ['--start-maximized', '--disable-notifications', '--disable-infobars', '--disable-extensions', '--disable-dev-shm-usage', '--no-sandbox']
         });
         this.page = await this.browser.newPage();
         await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36');
+
+
         
     }
 
@@ -78,6 +80,7 @@ class BasePage {
         try {
             let elemento
 
+            
 
             await this.go_to_url(this.base_url);
 
@@ -244,6 +247,7 @@ class BasePage {
     cleanText(text) {
         return text?.replace(/(\r\n|\n|\r)/gm, " ").trim();
     }
+
     async titleCase(str) {
         return str.toLowerCase().split(' ').map(function (word) {
             if (word === 'de' || word === 'da' || word === 'das' || word === 'do' || word === 'dos') {
@@ -341,26 +345,24 @@ class BasePage {
     }
 
     async getAllDocumentsInPage() {
-       /* try {
-            await this.selectAndWait(this.primeiroLink, 3000);
-        }
-        catch (err) {
-            console.log("Não foi possível selecionar o primeiro link por algum motivo")
-        }
-        */
-        const allLinks = await this.page.findElements(By.css("a"));
 
-        //Todos seguem esse padrão, seja monocratica ou acordeao
+        // //Todos seguem esse padrão, seja monocratica ou acordeao
         const regex = /\/pages\/search\//;
 
         const hrefsPaginas = [];
 
-        for (const link of allLinks) {
-            const href = await link.getAttribute("href");
-            if (regex.test(href)) {
-                hrefsPaginas.push(href);
+
+        const links = await this.page.evaluate(() => {
+          return Array.from(document.querySelectorAll('a'), a => a.href);
+        });
+
+        for (const link of links) {
+            if (regex.test(link)) {
+                hrefsPaginas.push(link);
             }
         }
+
+        
 
         return hrefsPaginas;
 
@@ -403,7 +405,8 @@ class BasePage {
                     console.error(error)
                 }
             }
-            this.page.sleep(1000); //esperar 1 segundo para evitar sobrecarregar o site e parar de dar o bug de nao achar a janela
+            //esperar 1 segundo para evitar sobrecarregar o site e parar de dar o bug de nao achar a janela
+            await sleep(1000);
         }
         return listaElementos;
     }
@@ -533,12 +536,17 @@ class BasePage {
 
     async getTotalPaginas() {
         try{
-            var elemento = await this.getElementByXpath(this.pathTotalPaginas);
-       // var texto = await this.getTextUsingSelector(this.pathTotalPaginas);
-       let texto = await elemento.getText();
-       texto = texto?.split(" ")[1];
+            let texto = await this.getTextUsingSelector(this.pathTotalPaginas);
+            
+            const match = texto.match(/\d+/);
 
-        return texto;
+            // verifique se há um resultado
+            if (match) {
+            // o resultado estará no primeiro elemento do array
+            texto = match[0];
+            }
+
+            return texto;
         }
         catch(e){
             console.error("Não há paginas para a consulta")
