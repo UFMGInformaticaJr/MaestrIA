@@ -1,6 +1,7 @@
 const MonocraticaObj = require('../monocraticas.js')
 const PageMonocraticaClass = require('../pages/monocraticaPage');
 const RequestService = require('../api/request.js');
+const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
 
 
@@ -20,14 +21,12 @@ const scrapingSetup = async (PageMonocratica,  paginaInicial = 1, dataInicial, d
 
     return novaUrl;
 
-    //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
-    // await PageMonocratica.inserirDatas()
-
-    // return await PageMonocratica.getCurrentUrl();
 };
 
 
-async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
+async function scrapSingleMonocratica (PageMonocratica, linkMonocratica, Monocratica) {
+
+    console.log("Abrindo página monocrática: " + linkMonocratica)
     
     //abrir pagina monocratica
 
@@ -36,13 +35,12 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     await PageMonocratica.takeScreenshot('inicio.png');
     //criar novo objeto
 
-    const Monocratica = { ...MonocraticaObj };
     Monocratica.url_jurisprudencia_tribunal = linkMonocratica;
 
 
     //pegando ID da api
     // let id = await RequestService.getID();
-    let id = 1;
+    let id = randomUUID();
     Monocratica.id_jurisprudencia = id;
 
     await PageMonocratica.renderizarPagina();
@@ -82,26 +80,29 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.inteiro_teor_puro = PageMonocratica.cleanText(Monocratica.inteiro_teor_puro);
 
     Monocratica.ementa = Monocratica.inteiro_teor_puro;
+    await sleep(2000)  
+
+    return Monocratica;
+
+}
+
+async function scrapSingleAcompanhamentoProcessual(PageMonocratica, url, Monocratica){
+    console.log("Abrindo pagina acompnhamento  " + url)
+    await PageMonocratica.go_to_url(url);
+
     await sleep(2000)
-
-    //HEADLESS TRAVANDO AQUI
-    
-    await PageMonocratica.takeScreenshot('antes2_pagina.png');
-    
-    await sleep(4000)
-
-
-    //ACOMPANHAMENTO PROCESSUAL
-
-    await PageMonocratica.irPaginaAcompanhamentoProcessual();
-
-    await PageMonocratica.takeScreenshot('teste.png');
 
     //pegando número unico
     Monocratica.numero_unico_cnj = await PageMonocratica.getCnjCruAcompanhamentoProcessual();
     Monocratica.numero_unico_cnj = Monocratica.numero_unico_cnj.split(' ')[2];
 
-    await PageMonocratica.clickByXpath(PageMonocratica.botaoPesquisarAvancado)
+    //esse xpath muda se for headless ou nao por conta do tamanho da janela do navegador
+    await PageMonocratica.clickByXpath(PageMonocratica.inputInformacao)
+
+    await sleep(1000)
+
+    await PageMonocratica.takeScreenshot('teste.png');
+    await PageMonocratica.clickByXpath(PageMonocratica.botaoInformacoesProcessoProcessual)
 
     //pegando assunto
     Monocratica.assunto = await PageMonocratica.getAssuntoAcompanhamentoProcessual();
@@ -123,19 +124,18 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica) {
     Monocratica.tribunal_origem = await PageMonocratica.titleCase(Monocratica.tribunal_origem);
 
 
-    //voltando para a aba anterior
-   
-    await PageMonocratica.returnOldWindow();
-
-    //clicar no icone de mostrar integra e mudar para a nova aba
-    Monocratica.url_pdf = await PageMonocratica.getLinkTeorIntegra();
-
-    //console.log(Monocratica)
-    
-
-    return Monocratica;
-
 }
+
+async function scrapDocumentoInteiro (PageMonocratica, Monocratica, linkProcesso, linkAcompanhamento, linkPDF){
+    await scrapSingleMonocratica(PageMonocratica, linkProcesso, Monocratica);
+
+    await sleep(1000);
+    await scrapSingleAcompanhamentoProcessual(PageMonocratica, linkAcompanhamento, Monocratica);
+
+    Monocratica.url_pdf = linkPDF;
+    console.log("Pagina PDF " + linkPDF)
+}
+
 
 async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado) {
     try {
@@ -147,7 +147,7 @@ async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackT
         PageMonocratica.setUrlInicial(linkInicial);
 
         let totalPaginas =  await PageMonocratica.getTotalPaginas();
-        totalPaginas = 2;
+        totalPaginas = 1;
         totalPaginas = Number(totalPaginas);
         callbackTotalPaginas(totalPaginas);
         console.log("Total de Paginas " + totalPaginas)
@@ -180,4 +180,64 @@ async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackT
 
 
 
-module.exports = scrapMonocratica;
+//TODO: integrar com controlador e ajustar a logica de ir pra proxima pagina. quando tiver tudo certo apagar essa funçao e jogar pra la de cima
+async function teste (){
+    const PageMonocratica = new PageMonocraticaClass();
+    await PageMonocratica.init();
+
+    const ArrayMonocratica = []
+
+    var Monocratica = { ...MonocraticaObj };
+
+    var linkInicial = await scrapingSetup (PageMonocratica, 1, '01/01/2021', '01/02/2021');
+    PageMonocratica.setUrlInicial(linkInicial);
+
+    let totalPaginas =  await PageMonocratica.getTotalPaginas();
+    console.log("Total de Paginas " + totalPaginas)
+    totalPaginas = 1;
+    totalPaginas = Number(totalPaginas);
+
+
+
+    while (currentPage <= totalPaginas) {
+
+        for(let i = 1; i < 11; i++){
+
+            Monocratica = { ...MonocraticaObj };
+
+            console.log("Monocratica " + i + " de 10")
+            let urls = await PageMonocratica.getUrls(i);
+
+
+            let linkProcesso = urls[0];
+            let linkAcompanhamento = urls[1];
+            let linkPDF = urls[2];
+            await scrapDocumentoInteiro(PageMonocratica, Monocratica, linkProcesso, linkAcompanhamento, linkPDF);
+            await sleep(1000);
+
+            ArrayMonocratica.push(Monocratica);
+
+            //TODO - deixar esse link sempre variavel e na parte de ir pra proxima pagina trocar o link
+            PageMonocratica.go_to_url(linkInicial);
+
+        }
+
+
+        currentPage++;
+        if(currentPage != totalPaginas){
+            await PageMonocratica.goToNextPage(currentPage);
+        }
+
+        return ArrayMonocratica;
+    }
+
+
+
+
+}
+
+
+module.exports = teste;
+
+
+

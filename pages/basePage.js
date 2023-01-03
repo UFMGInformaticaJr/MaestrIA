@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer-extra') 
 const pluginStealth = require('puppeteer-extra-plugin-stealth') 
 const {executablePath} = require('puppeteer');
+const { get } = require('http');
 puppeteer.use(pluginStealth())
 
 const sleep = require('util').promisify(setTimeout);
@@ -26,6 +27,7 @@ class BasePage {
 
     //botao final de pesquisa no menu inicial
     botaoPesquisar = '/html/body/app-root/app-home/main/search/div/search-input/div/div/div/div/div[2]/div/div[4]/div/div[2]/button[2]'
+   
 
 
     //datas no painel lateral
@@ -33,7 +35,9 @@ class BasePage {
     inputFimDataJulgamento = '/html/body/app-root/app-home/main/search/div/div/div/div[1]/div[2]/div[3]/div/div[2]/mat-form-field[2]/div/div[1]/div[3]/input'
 
     //botao na pagina de pesquisa avancada
-    botaoPesquisarAvancado = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[2]/ul/li[1]/a'
+    botaoInformacoesProcessoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[3]/nav/div/ul/li[1]/a'
+    inputInformacao = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[3]/nav/div/input'
+    
 
     //elementos que monocraticas e acordeoes tem em comum na pagina do processo
     primeiroLink = 'sobrecarregar';
@@ -65,16 +69,37 @@ class BasePage {
     async init() {
         this.browser = await puppeteer.launch({
             executablePath: executablePath(),
-            headless: false,
+            headless: true,
             defaultViewport: null,
-            args: ['--start-maximized', '--disable-notifications', '--disable-infobars', '--disable-extensions', '--disable-dev-shm-usage', '--no-sandbox']
+            args: [
+                '--start-maximized',
+                '--ignore-certificate-errors',
+                '--allow-running-insecure-content',
+                '--disabel-extension',
+                '--disable-gpu',
+                '--disable-dev-shm-usage',
+                '--no-sandbox',
+                '--proxy-server="direct://"',
+                '--proxy-bypass-list=*'
+
+            ],
+            ignoreHTTPSErrors: true
         });
+
+          
+
         this.page = await this.browser.newPage();
         await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36');
 
-
-        
     }
+
+    async scrollRow() {
+        const element = await this.selectAndWait(this.botaoPesquisar, 2000);
+        await this.page.evaluate((element) => {
+            element.scrollIntoView();
+        }, element);
+    }
+          
 
     async setUpSearchOptions(type) {
         try {
@@ -121,6 +146,7 @@ class BasePage {
             }
             //enviar a query de pesquisa
             elemento.type(searchQuery);
+            await sleep(1000);
 
             //BOTAO PESQUISAR
             await this.clickByXpath(this.botaoPesquisar);
@@ -143,12 +169,8 @@ class BasePage {
 
     async openUrlAndWaitForPageLoad(url) {
         await this.go_to_url(url);
-        this.takeScreenshot('paginaCarregada.png');
 
         await sleep(3000);
-
-        //esperar a pagina carregar. Acho que nao é necessário
-        //await this.selectAndWait(this.pathProcesso)
     }
 
     async renderizarPagina() {
@@ -181,6 +203,7 @@ class BasePage {
     }
     async clickByXpath(xpath) {
         const elem = await this.getElementByXpath(xpath);
+        await sleep(1000);
         await elem.click();
     }
     async getLinkByXpath(xpath) {
@@ -273,8 +296,6 @@ class BasePage {
         }
         return await this.getElementByXpath(xpath);
 
-        //let el = await this.page.findElement(By.xpath(xpath));
-        //await this.page.wait(until.elementIsVisible(el),100);
 
     }
 
@@ -462,6 +483,7 @@ class BasePage {
         }
     }
 
+    //legado, nao pecisa mais
     async irPaginaAcompanhamentoProcessual() {
         
             // let url = await this.getLinkByXpath(this.pathIconeAcompanhamentoProcessual);
@@ -473,20 +495,6 @@ class BasePage {
             //mudar para a nova aba
             await this.newWindowUrl();
       
-        // catch (e) {
-        //     // geralmente muitos erros acontecem nesse método, então é legal tentar novamente
-        //     if (retry) {
-        //         await this.irPaginaAcompanhamentoProcessual(false);
-
-        //     }
-        //     else {
-        //         console.log(e)
-        //         console.error('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
-        //         e.message + - ('Não foi possível acessar a página de acompanhamento processual, verifique se o processo possui essa página')
-        //         throw e;
-
-        //     }
-        // }
 
     }
 
@@ -514,12 +522,12 @@ class BasePage {
         return tribunal;
     }
 
-    async getLinkTeorIntegra() {
+    async getLinkTeorIntegra(xpathTeorIntegra) {
         //clicar no icone de mostrar integra e mudar para a nova aba
         let url = ''
         try {
             //TODO VE QUANDO NAO TEM O PDF 
-            await this.clickByXpath(this.pathIconeInteiroTeor)
+            await this.clickByXpath(xpathTeorIntegra);
             await this.newWindowUrl();
             url = await this.page.url();
 
@@ -536,7 +544,9 @@ class BasePage {
 
     async getTotalPaginas() {
         try{
+            
             let texto = await this.getTextUsingSelector(this.pathTotalPaginas);
+            await this.page.screenshot({ path: 'example.png' });
             
             const match = texto.match(/\d+/);
 
@@ -581,6 +591,39 @@ class BasePage {
 
     async takeScreenshot (nomearquivo){
         await this.page.screenshot({path: nomearquivo});
+    }
+
+    async getUrlByXpath(xpath) {
+        const elemento = await this.selectAndWait(xpath, 2000);
+        const value = await elemento.evaluate(el => el.href)
+        return value
+    }
+
+
+    async getUrlProcesso(i){
+        let xpathProcesso = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/a`
+        let url = await this.getUrlByXpath(xpathProcesso);
+        return url;
+    }
+
+    async getUrlAcompanhamento (i){
+        let xpathAcompanhamento = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[2]`
+        let url = await this.getUrlByXpath(xpathAcompanhamento);
+        return url;
+    }
+
+    async getUrlPDF (i){
+        let xpathPDF = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[3]`
+        let url = await this.getLinkTeorIntegra(xpathPDF);
+        return url;
+    }
+
+    async getUrls(i){
+        let urls = [];
+        urls.push(await this.getUrlProcesso(i));
+        urls.push(await this.getUrlAcompanhamento(i));
+        urls.push(await this.getUrlPDF(i));
+        return urls;
     }
 
 }
