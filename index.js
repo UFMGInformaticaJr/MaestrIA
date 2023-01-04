@@ -19,6 +19,24 @@ app.listen(port, () => {
     console.log(`listening at http://localhost:${port}`)
 })
 
+
+
+
+let totalPaginas = 0;
+const resultados = []
+let paginaAtual = 1;
+
+const mockAtualizarTotalPaginas = (total) => {
+    totalPaginas = total
+}
+
+const mockPassarDePagina = () => {
+    paginaAtual += 1
+}
+const mockSalvarResultado = (resultado) => {
+    resultados.push(resultado)
+}
+
 app.use('/', controllerRouter)
 
 app.get('/acordeao', async (request, response) => {
@@ -31,7 +49,8 @@ app.get('/acordeao', async (request, response) => {
 })
 app.get('/monocraticas', async (request, response) => {
     try {
-        let links = await scrapMonocraticas();
+        let links = await scrapMonocraticas(1, "20/05/2020" , "21/05/2020", mockAtualizarTotalPaginas, mockPassarDePagina, mockSalvarResultado);
+        console.log(resultados)
         response.status(200).json(links)
     } catch (error) {
         console.log(error)

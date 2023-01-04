@@ -14,42 +14,18 @@ let tabelaErros = {
 }
 
 const salvarArquivo = async (tipo) => {
+    console.log('________\n\n');
+    const nomeArquivo = tipo + '.json'
+    const dados = JSON.stringify(resultados)    
+    const emJson =  JSON.stringify(JSON.parse(dados))
 
-    const nomeArquivo = tipo + '.txt'
-    let shouldSerialize = true
-    await fs.writeFile(nomeArquivo, tipo + '\n', (err) => {
+
+    await fs.appendFile(nomeArquivo, emJson, (err) => {
         if (err) throw err;
-
     });
+    
 
-    //tentar serializar, se der erro, salvar sem serializar
-    // isso deveria arrumar erro de referencia circular
-    for(let i = 0; i < resultados.length; i++){
-        let item = resultados[i]
-        try {
-            if (shouldSerialize){
-                item = JSON.stringify(item)
-            }
-        }
-        catch (error) {
-            console.log("Erro ao serializar")
-            console.log(resultados)
-            console.log(item)
-            shouldSerialize = false
-            break;
-        }
-        await fs.appendFile(nomeArquivo, item + '\n', (err) => {
-            if (err) throw err;
-        });
-    };
-
-    if(!shouldSerialize){
-        await fs.appendFile(nomeArquivo, resultados + '\n', (err) => {
-            if (err) throw err;
-        });
-    }
-
-    console.log('Results saved to the file');
+    console.log('Results saved to the file system!');
 
 }
 
@@ -159,7 +135,7 @@ async function Crawler(tribunal, tipo, dataInicial, dataFinal) {
     }
 
     const salvarResultado = (resultado) => {
-        resultados.push(...resultado)
+        resultados.push(resultado)
     }
 
 
@@ -185,6 +161,7 @@ async function Crawler(tribunal, tipo, dataInicial, dataFinal) {
             result.error = error.message
             result.stacktrace = error.stack
             result.lastPage = paginaAtual
+            console.error("\n\nCrawler: Erro na pagina " + paginaAtual)
             console.error(result)
 
             enviarStatus();

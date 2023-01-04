@@ -578,6 +578,8 @@ class BasePage {
 
         console.log("Acessando página " + urlProximaPagina);
         await this.go_to_url(urlProximaPagina);
+
+        return urlProximaPagina;
     }
 
     async getCurrentUrl() {

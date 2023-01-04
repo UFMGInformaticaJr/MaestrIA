@@ -137,7 +137,7 @@ async function scrapDocumentoInteiro (PageMonocratica, Monocratica, linkProcesso
 }
 
 
-async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado) {
+async function antiga(paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado) {
     try {
         PageMonocratica = new PageMonocraticaClass();
         await PageMonocratica.init();
@@ -179,9 +179,11 @@ async function scrapMonocratica(paginaInicial, dataInicial, dataFinal, callbackT
 }
 
 
-
 //TODO: integrar com controlador e ajustar a logica de ir pra proxima pagina. quando tiver tudo certo apagar essa funçao e jogar pra la de cima
-async function teste (){
+async function scrapMonocratica (paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado){
+    
+    const MAX_ELEMENTS_IN_PAGE = 10;
+    
     const PageMonocratica = new PageMonocraticaClass();
     await PageMonocratica.init();
 
@@ -189,19 +191,26 @@ async function teste (){
 
     var Monocratica = { ...MonocraticaObj };
 
-    var linkInicial = await scrapingSetup (PageMonocratica, 1, '01/01/2021', '01/02/2021');
+    var linkInicial = await scrapingSetup (PageMonocratica, paginaInicial, dataInicial, dataFinal);
+    
+    
+    const returnToSearchResults = async () => {
+        await PageMonocratica.go_to_url(linkInicial);
+    
+    }
+    
     PageMonocratica.setUrlInicial(linkInicial);
 
     let totalPaginas =  await PageMonocratica.getTotalPaginas();
     console.log("Total de Paginas " + totalPaginas)
-    totalPaginas = 1;
+    
     totalPaginas = Number(totalPaginas);
-
+    callbackTotalPaginas(totalPaginas);
 
 
     while (currentPage <= totalPaginas) {
 
-        for(let i = 1; i < 11; i++){
+        for(let i = 1; i < MAX_ELEMENTS_IN_PAGE; i++){
 
             Monocratica = { ...MonocraticaObj };
 
@@ -217,27 +226,32 @@ async function teste (){
 
             ArrayMonocratica.push(Monocratica);
 
+            callbackResultado(Monocratica);
+
+
             //TODO - deixar esse link sempre variavel e na parte de ir pra proxima pagina trocar o link
-            PageMonocratica.go_to_url(linkInicial);
-
+            await returnToSearchResults();
         }
-
 
         currentPage++;
+        console.log("Passando de pagina!")
+
         if(currentPage != totalPaginas){
-            await PageMonocratica.goToNextPage(currentPage);
+            callbackPassarPagina(currentPage);
+            //mudar de pagina e salvar seu novo link
+            linkInicial = await PageMonocratica.goToNextPage(currentPage);
         }
 
-        return ArrayMonocratica;
     }
 
 
+    return ArrayMonocratica;
 
 
 }
 
 
-module.exports = teste;
+module.exports = scrapMonocratica;
 
 
 
