@@ -1,6 +1,9 @@
 const AcordeaoObj = require('../acordeao')
 const PageAcordeaoClass = require('../pages/acordeaoPage')
 const { NoSuchElementError } = require('selenium-webdriver/lib/error');
+const RequestService = require('../api/request.js');
+const { randomUUID } = require('crypto');
+const sleep = require('util').promisify(setTimeout);
 
 let PageAcordeao = null;
 
@@ -10,9 +13,11 @@ let elementsParsed = 0;
 let listaAcordeao = [];
 
 const scrapingSetup = async (PageAcordeao, paginaInicial = 1, dataInicial, dataFinal) => {
-    await PageAcordeao.setUpSearchOptions();
 
-    const novaUrl = await PageAcordeao.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal)
+    //Refatorado pra nao buscar
+    const urlBase = await PageAcordeao.newSetupOptions();
+
+    const novaUrl = await PageAcordeao.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal, urlBase)
     await PageAcordeao.go_to_url(novaUrl)
 
     return novaUrl;
@@ -25,10 +30,10 @@ const scrapingSetup = async (PageAcordeao, paginaInicial = 1, dataInicial, dataF
 
 }
 
-const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
+const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
 
     //teste de sanidade
-    if (! linkAcordeao instanceof String) {
+    if (!linkAcordeao instanceof String) {
         console.error("linkAcordeao nao eh uma string. Foi passado: ", linkAcordeao)
         throw new Error("linkAcordeao nao eh uma string. Foi passado: ", linkAcordeao)
     }
@@ -36,15 +41,15 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
     //abrir pagina do acordeao
     await PageAcordeao.openUrlAndWaitForPageLoad(linkAcordeao)
 
+    await PageAcordeao.takeScreenshot('inicioA.png');
 
-    //criar novo objeto
-    const Acordeao = { ...AcordeaoObj }
     Acordeao.url_jurisprudencia_tribunal = linkAcordeao;
 
-    let id = Acordeao.url_jurisprudencia_tribunal.split("/search/")[1]
-    id = id.split("/")[0]
-    //deixar apenas os numeros
-    Acordeao.id_jurisprudencia = id.replace(/\D/g, '');
+    // let id = await RequestService.getID();
+    let id = randomUUID();
+    Acordeao.id_jurisprudencia = id;
+
+    await PageMonocratica.renderizarPagina();
 
 
     const textoProcesso = await PageAcordeao.getProcesso();
@@ -123,11 +128,17 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
         Acordeao.ementa_full = PageAcordeao.cleanText(ementaDados.ementa_full)
         Acordeao.linha_citacao = PageAcordeao.cleanText(ementaDados.linha_citacao)
     }
-    let pularAcompanhemento = false
 
+    return listaAcordeao;
+}
+
+const scrapSingleAcompanhamentoProcessual = async (PageAcordeao, url, Acordeao) => {
+
+    let pularAcompanhemento = false
     try {
-        //clicar no icone de acompanhamento processual
-        await PageAcordeao.irPaginaAcompanhamentoProcessual()
+        await PageAcordeao.go_to_url(url);
+    await sleep(2000)
+        
     }
     catch (error) {
         if (error instanceof NoSuchElementError) {
@@ -136,13 +147,21 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
         }
     }
 
+    await PageAcordeao.takeScreenshot("acompanhamentoProcessual.png")
+
     if (!pularAcompanhemento) {
         //existem alguns que o cnj nao existem, o texto diz sem numero unico
         const textpCnpj = await PageAcordeao.getCnjCruAcompanhamentoProcessual()
         Acordeao.numero_unico_cnj = textpCnpj.split('-')[0];
 
 
+        //necessario clickar aqui pra mudar a aba visivel
+        await PageAcordeao.clickByXpath(PageAcordeao.inputInformacao)
 
+
+        await PageAcordeao.takeScreenshot('acompanhamentoProcessual2.png');
+        await PageAcordeao.clickByXpath(PageAcordeao.botaoInformacoesProcessoProcessual)
+    
         //pegando assunto
         Acordeao.assunto = await PageAcordeao.getAssuntoAcompanhamentoProcessual()
         Acordeao.assunto = PageAcordeao.cleanText(Acordeao.assunto)
@@ -158,20 +177,9 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao) => {
         Acordeao.tribunal_origem = await PageAcordeao.getTribunalOrigemAcompanhamentoProcessual()
         Acordeao.tribunal_origem = PageAcordeao.cleanText(Acordeao.tribunal_origem)
         Acordeao.tribunal_origem = await PageAcordeao.titleCase(Acordeao.tribunal_origem)
-
-        //isso demora DEMAIS por algum motivo
-        await PageAcordeao.returnOldWindow()
     }
-
-    const link_inteiro_teor = await PageAcordeao.getLinkTeorIntegra()
-
-    Acordeao.url_inteiro_teor = link_inteiro_teor
-
-    //console.log(Acordeao)
-
-
-    return listaAcordeao;
 }
+
 
 const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPaginas, callbackMudancaDePagina, callbackResultado) => {
     //const driver = await new Builder().forBrowser('chrome').build(); //
@@ -214,7 +222,7 @@ const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callb
         //totalPaginas = 2;
 
         while (currentPage <= totalPaginas) {
-            if(currentPage > 1){
+            if (currentPage > 1) {
                 console.log("Estou na pagina ", currentPage);
             }
             const acordeaoPaginas = await PageAcordeao.scrapAllDocumentsInPage(scrapSingleAcordeao)
@@ -251,5 +259,120 @@ const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callb
 }
 
 
+async function scrapDocumentoInteiro (PageAcordeao, Acordeao, linkProcesso, linkAcompanhamento, linkPDF){
+    await scrapSingleAcordeao(PageAcordeao, linkProcesso, Acordeao);
 
-module.exports = scrapingAcordeao 
+    await sleep(1000);
+    await scrapSingleAcompanhamentoProcessual(PageAcordeao, linkAcompanhamento, Acordeao);
+
+    Acordeao.url_pdf = linkPDF;
+    console.log("Pagina PDF " + linkPDF)
+}
+
+const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPaginas, callbackMudancaDePagina, callbackResultado) => {
+    //checar se os callbacks foram passados
+    if (callbackTotalPaginas == null) {
+        throw new Error("callbackTotalPaginas não foi passado")
+    }
+    else if (callbackMudancaDePagina == null) {
+        throw new Error("callbackMudancaDePagina não foi passado")
+    }
+    else if (callbackResultado == null) {
+        throw new Error("callbackResultado não foi passado")
+    }
+
+
+
+    try {
+
+        PageAcordeao = new PageAcordeaoClass();
+        await PageAcordeao.init();
+
+        const arrayAcordeao = []
+
+        let Acordeao = {...AcordeaoObj}
+
+        var linkkInicial = await scrapingSetup(PageAcordeao, paginaInicial, dataInicial, dataFinal);
+        currentPage = paginaInicial;
+        //TODO: verificar aqui se acabou a coleta, isto é, pagina inicial > limite paginas
+        // da pra saber isso vendo o html
+
+        const returnToSearchResults = async () => {
+            await PageAcordeao.go_to_url(linkInicial);
+        
+        }
+
+        PageAcordeao.setUrlInicial(linkkInicial);
+
+        let totalPaginas = await PageAcordeao.getTotalPaginas();
+        totalPaginas = Number(totalPaginas);
+
+        callbackTotalPaginas(totalPaginas);
+
+        console.log("Total de páginas: " + totalPaginas)
+
+        //inicio loop
+
+        //totalPaginas = 2;
+
+        const TOTAL_ACORDEOES_PAGINA = 10;
+
+        while (currentPage <= totalPaginas) {
+            if (currentPage > 1) {
+                console.log("Estou na pagina ", currentPage);
+            }
+
+            for(let i = 0; i < TOTAL_ACORDEOES_PAGINA; i++){
+                Acordeao = { ...AcordeaoObj };
+
+                console.log(`Acordeao ${i+1}/10 e pagina ${currentPage}/${totalPaginas}`)
+
+                //TODO: arrumar xpaths disso
+                let urls = await PageAcordeao.getUrls(i);
+    
+                //TODO: verificar se acabou os elementos na pagina e, se tiver, sair
+    
+                let linkProcesso = urls[0];
+                let linkAcompanhamento = urls[1];
+                let linkPDF = urls[2];
+
+                await scrapDocumentoInteiro(PageAcordeao, Acordeao, linkProcesso, linkAcompanhamento, linkPDF);
+
+                await sleep(1000);
+
+                arrayAcordeao.push(Acordeao);
+
+                callbackResultado(Acordeao)
+
+                await returnToSearchResults();
+            }
+
+            currentPage++;
+            
+            if (currentPage <= totalPaginas) {
+                console.log("Trocando de pagina..");
+                callbackMudancaDePagina()
+                //colocar a nova pagina na url
+                linkkInicial = await PageAcordeao.goToNextPage(currentPage);
+            }
+        }
+
+        // console.log(listaAcordeao)
+
+        //TODO: ir para nova página raiz, com o offset de página lida adicionado
+        //fim loop
+
+    } catch (error) {
+        const nome = "momentoErro.png"
+        console.log("Salvando screenshot", nome)
+        PageAcordeao.takeScreenshot(nome);
+
+        throw error;
+    }
+
+    return listaAcordeao;
+}
+
+
+
+module.exports = teste 

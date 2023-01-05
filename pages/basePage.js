@@ -100,6 +100,30 @@ class BasePage {
         }, element);
     }
           
+    async newSetupOptions(type){
+        const url = "https://jurisprudencia.stf.jus.br/pages/search?base=acordaos"
+
+
+        const params = {
+            base: 'acordaos',
+            pesquisa_inteiro_teor: true,
+            sinonimo: true,
+            plural: false,
+            radicais: true,
+            buscaExata: false,
+            page: 1,
+            pageSize: 10,
+            queryString: 'recurso',
+            sort: '_score',
+            sortBy: 'desc',
+            isAdvanced: true
+
+        }
+
+        const novaUrl = await this.criarNovaUrlComParametro(params, url)
+
+        return novaUrl;
+    }   
 
     async setUpSearchOptions(type) {
         try {
@@ -328,7 +352,7 @@ class BasePage {
 
 
 
-    async inserirPaginaEDatasNaUrl(paginaInicial = 10, dataInicio = '01/01/2000', dataFim = '01/01/2021') {
+    async inserirPaginaEDatasNaUrl(paginaInicial = 10, dataInicio = '01/01/2000', dataFim = '01/01/2021', url="") {
 
 
         //deixar apenas numeros na data
@@ -343,7 +367,7 @@ class BasePage {
             'julgamento_data': intervalo
         }
 
-        const urlComParametros = await this.criarNovaUrlComParametro(novasQueries);
+        const urlComParametros = await this.criarNovaUrlComParametro(novasQueries, url);
 
         return urlComParametros;
     }

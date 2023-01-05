@@ -41,7 +41,8 @@ app.use('/', controllerRouter)
 
 app.get('/acordeao', async (request, response) => {
     try {
-        let links = await scrapAcordao();
+        let links = await scrapAcordao(1, "20/05/2020" , "21/05/2020", mockAtualizarTotalPaginas, mockPassarDePagina, mockSalvarResultado);
+        
         response.status(200).json(links)
     } catch (error) {
         console.log(error)
