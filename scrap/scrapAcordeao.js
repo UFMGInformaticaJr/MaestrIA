@@ -49,7 +49,7 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
     let id = randomUUID();
     Acordeao.id_jurisprudencia = id;
 
-    await PageMonocratica.renderizarPagina();
+    await PageAcordeao.renderizarPagina();
 
 
     const textoProcesso = await PageAcordeao.getProcesso();
@@ -57,7 +57,7 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
     Acordeao.processo = textoProcesso.split('-')[0];
 
     //acho que nao eh necessario
-    await driver.sleep(2000)
+    //await driver.sleep(2000)
 
 
     Acordeao.indexacao = await PageAcordeao.getContentIfTextExists("Indexação", "h4")
@@ -70,7 +70,7 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
         Acordeao.orgao_julgador = orgaoJulgadorText.trim()
     }
 
-
+    // TODO: parei aqui. DEve ser erro de xpath relativo vs absoluto
     const textoClasse = await PageAcordeao.getClasse();
     Acordeao.classe = textoClasse.split(' ')[0];
     Acordeao.classe = await PageAcordeao.titleCase(Acordeao.classe)
@@ -210,6 +210,8 @@ const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callb
 
         PageAcordeao.setUrlInicial(linkkInicial);
 
+        await PageAcordeao.renderizarPagina();
+
         let totalPaginas = await PageAcordeao.getTotalPaginas();
         totalPaginas = Number(totalPaginas);
 
@@ -321,14 +323,16 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
             if (currentPage > 1) {
                 console.log("Estou na pagina ", currentPage);
             }
-
-            for(let i = 0; i < TOTAL_ACORDEOES_PAGINA; i++){
+            // isso vai de 1 até exatamente 10 pq n existe div 0
+            for(let i = 1; i <= TOTAL_ACORDEOES_PAGINA; i++){
                 Acordeao = { ...AcordeaoObj };
 
-                console.log(`Acordeao ${i+1}/10 e pagina ${currentPage}/${totalPaginas}`)
+                console.log(`Acordeao ${i}/10 e pagina ${currentPage}/${totalPaginas}`)
 
-                //TODO: arrumar xpaths disso
-                let urls = await PageAcordeao.getUrls(i);
+                PageAcordeao.takeScreenshot(`teste.png`);
+
+            
+                let urls = await PageAcordeao.getUrls(i, true);
     
                 //TODO: verificar se acabou os elementos na pagina e, se tiver, sair
     
@@ -359,7 +363,6 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
 
         // console.log(listaAcordeao)
 
-        //TODO: ir para nova página raiz, com o offset de página lida adicionado
         //fim loop
 
     } catch (error) {
@@ -369,6 +372,10 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
 
         throw error;
     }
+    finally {
+        await PageAcordeao.closeBrowser();
+    }
+
 
     return listaAcordeao;
 }

@@ -312,7 +312,7 @@ class BasePage {
         await this.page.wait(webthis.page.until.elementIsEnabled(element), timeout);
     }
 
-    async selectAndWait(xpath, timeout) {
+    async selectAndWait(xpath, timeout=1000) {
         try{
         await this.page.waitForSelector(`xpath/${xpath}`, { visible: true }, timeout);
         }catch(err){
@@ -632,23 +632,30 @@ class BasePage {
         return url;
     }
 
-    async getUrlAcompanhamento (i){
-        let xpathAcompanhamento = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[2]`
+    async getUrlAcompanhamento (i, offset=0){
+        
+        let xpathAcompanhamento = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[${2+offset}]`
         let url = await this.getUrlByXpath(xpathAcompanhamento);
         return url;
     }
 
-    async getUrlPDF (i){
-        let xpathPDF = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[3]`
+    async getUrlPDF (i, offset=0){
+        let xpathPDF = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[${3+offset}]`
         let url = await this.getLinkTeorIntegra(xpathPDF);
         return url;
     }
 
-    async getUrls(i){
+    async getUrls(i, isAcordeao=false){
+
+        let offset = 0;
+        if(isAcordeao){
+            offset = 1;
+        }
+
         let urls = [];
         urls.push(await this.getUrlProcesso(i));
-        urls.push(await this.getUrlAcompanhamento(i));
-        urls.push(await this.getUrlPDF(i));
+        urls.push(await this.getUrlAcompanhamento(i, offset));
+        urls.push(await this.getUrlPDF(i, offset));
         return urls;
     }
 

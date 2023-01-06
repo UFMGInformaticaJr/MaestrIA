@@ -210,7 +210,7 @@ async function scrapMonocratica (paginaInicial, dataInicial, dataFinal, callback
 
     while (currentPage <= totalPaginas) {
 
-        for(let i = 1; i < MAX_ELEMENTS_IN_PAGE; i++){
+        for(let i = 1; i <= MAX_ELEMENTS_IN_PAGE; i++){
 
             Monocratica = { ...MonocraticaObj };
 

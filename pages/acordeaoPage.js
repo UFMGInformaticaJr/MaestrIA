@@ -5,7 +5,9 @@ class AcordeaoPage extends BasePage {
 
     //variaveis sobrecarregadas
     primeiroLink = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[1]/a';
-    pathProcesso = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[1]';
+    //pathProcesso = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[1]';
+    pathProcesso = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[1]/div[1]/h4[1]';
+
     pathClasse = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[2]';
     pathRelator = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[3]';
     pathDataJulgamento = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/div/h4[1]';
@@ -16,7 +18,7 @@ class AcordeaoPage extends BasePage {
     pathIconeInteiroTeor = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]';
     pathTotalPaginas = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/paginator/nav/div/span';
 
-    pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
+    pathOrgaoJulgador = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[1]/div[1]/h4[4]'
 
     pathNumeroCnj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
     pathAssuntoAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li'
@@ -38,21 +40,27 @@ class AcordeaoPage extends BasePage {
     }
 
     async getOrgaoJulgador() {
-        const orgaoJulgador = await this.getElementByXpath(this.pathOrgaoJulgador);
-        return await orgaoJulgador.getText();
+        // TODO: erro aqui, parei nisso
+        const orgaoJulgador = await this.getTextUsingSelector(this.pathOrgaoJulgador);
+        return orgaoJulgador;
     }
 
     async irAbaEmentaFulleRecuperarTexto() {
         //Clickar na aba ementa e mudar de aba
         await this.clickByXpath(this.pathTabEmentafull);
-        const ementafull = await this.selectAndWait(this.pathEmentaFull);
 
-        let ementa_full = await ementafull.getText();
+        await this.renderizarPagina();
+        
+        const ementa_full = await this.getTextUsingSelector(this.pathEmentaFull);
+        const ementa_full_elemento = await this.getElementByXpath(this.pathEmentaFull);
+
+       
 
         //selecionar elemento abaixo do texto
-        //Talvez seja necessário um regex, estou confuso
-        let parteSecundaria = await ementafull.findElement(By.xpath("following-sibling::span[1]"));
-        let linha_citacao = await parteSecundaria.getText();
+       
+        let filho = "following-sibling::span[1]"
+        let parteSecundaria = await ementa_full_elemento.waitForSelector(`xpath${filho}`, { visible: true }, 1000);
+        let linha_citacao = await parteSecundaria.evaluate(element => element.textContent, element);
 
         //voltar para a aba resultado completo
         await this.clickByXpath(this.pathTabResultadoCompleto);
@@ -82,10 +90,11 @@ class AcordeaoPage extends BasePage {
         }
 
 
-        const badgeText = await badge.getText();
+        const badgeText = await getTextUsingSelector(this.pathBadgeRepercussaoGeral);
 
         //get badge children a element
-        let badgeA = await badge.findElement({ tagName: 'a' });
+        // TODO: acho q isso nao funciona
+        let badgeA = await badge.querySelector('a');
         let badgeAhref = await badgeA.getAttribute('href');
 
 
