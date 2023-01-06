@@ -21,12 +21,6 @@ const scrapingSetup = async (PageAcordeao, paginaInicial = 1, dataInicial, dataF
     await PageAcordeao.go_to_url(novaUrl)
 
     return novaUrl;
-    //Filtra Datas (tive que colocar varios awaits para dar tempo de carregar a pagina)
-    // await PageAcordeao.inserirDatas(inicial, final)
-
-    // return await PageAcordeao.getCurrentUrl();
-
-    //aqui deveria construir um json com as infos do scraping
 
 }
 
@@ -55,9 +49,6 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
     const textoProcesso = await PageAcordeao.getProcesso();
 
     Acordeao.processo = textoProcesso.split('-')[0];
-
-    //acho que nao eh necessario
-    //await driver.sleep(2000)
 
 
     Acordeao.indexacao = await PageAcordeao.getContentIfTextExists("Indexação", "h4")
@@ -252,9 +243,7 @@ const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callb
 
 
         throw error;
-    } finally {
-        await driver.quit();
-    }
+    } 
 
     return listaAcordeao;
 
@@ -371,9 +360,6 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
         PageAcordeao.takeScreenshot(nome);
 
         throw error;
-    }
-    finally {
-        await PageAcordeao.closeBrowser();
     }
 
 

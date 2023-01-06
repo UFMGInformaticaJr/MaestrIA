@@ -8,7 +8,6 @@ const scrapMonocraticas = require('./scrap/scrapMonocraticas.js');
 
 const RequestService = require('./api/request.js')
 
-const takeScreenshot = require('./testPup.js')
 
 
 const app = express();
@@ -18,9 +17,6 @@ app.use(bodyParser.json());
 app.listen(port, () => {
     console.log(`listening at http://localhost:${port}`)
 })
-
-
-
 
 let totalPaginas = 0;
 const resultados = []

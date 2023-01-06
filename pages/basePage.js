@@ -1,7 +1,6 @@
 const puppeteer = require('puppeteer-extra') 
 const pluginStealth = require('puppeteer-extra-plugin-stealth') 
 const {executablePath} = require('puppeteer');
-const { get } = require('http');
 puppeteer.use(pluginStealth())
 
 const sleep = require('util').promisify(setTimeout);
@@ -69,7 +68,7 @@ class BasePage {
     async init() {
         this.browser = await puppeteer.launch({
             executablePath: executablePath(),
-            headless: true,
+            headless: false,
             defaultViewport: null,
             args: [
                 '--start-maximized',

@@ -5,14 +5,6 @@ const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
 
 
-
-let PageMonocratica = null;
-
-let currentPage = 1;
-
-let listaMonocratica = [];
-
-
 const scrapingSetup = async (PageMonocratica,  paginaInicial = 1, dataInicial, dataFinal) => {
     //TODO: Isso pode ser extraido para a classe basePage
     await PageMonocratica.setUpSearchOptions();
@@ -24,7 +16,7 @@ const scrapingSetup = async (PageMonocratica,  paginaInicial = 1, dataInicial, d
 };
 
 
-async function scrapSingleMonocratica (PageMonocratica, linkMonocratica, Monocratica) {
+const scrapSingleMonocratica = async (PageMonocratica, linkMonocratica, Monocratica) => {
 
     console.log("Abrindo página monocrática: " + linkMonocratica)
     
@@ -32,7 +24,6 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica, Monocra
 
     await PageMonocratica.openUrlAndWaitForPageLoad(linkMonocratica)
    
-    await PageMonocratica.takeScreenshot('inicio.png');
     //criar novo objeto
 
     Monocratica.url_jurisprudencia_tribunal = linkMonocratica;
@@ -56,8 +47,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica, Monocra
 
     Monocratica.classe = await PageMonocratica.getClasse();
     Monocratica.classe = await PageMonocratica.titleCase(Monocratica.classe);
-    // console.log("classe: " + Monocratica.classe)
-    // await sleep(6000)
+
 
     Monocratica.relator = await PageMonocratica.getRelator()
     Monocratica.relator = Monocratica.relator?.split('.')[1].trim();
@@ -86,7 +76,7 @@ async function scrapSingleMonocratica (PageMonocratica, linkMonocratica, Monocra
 
 }
 
-async function scrapSingleAcompanhamentoProcessual(PageMonocratica, url, Monocratica){
+const scrapSingleAcompanhamentoProcessual = async (PageMonocratica, url, Monocratica) => {
     console.log("Abrindo pagina acompnhamento  " + url)
     await PageMonocratica.go_to_url(url);
 
@@ -101,7 +91,6 @@ async function scrapSingleAcompanhamentoProcessual(PageMonocratica, url, Monocra
 
     await sleep(1000)
 
-    await PageMonocratica.takeScreenshot('teste.png');
     await PageMonocratica.clickByXpath(PageMonocratica.botaoInformacoesProcessoProcessual)
 
     //pegando assunto
@@ -112,7 +101,6 @@ async function scrapSingleAcompanhamentoProcessual(PageMonocratica, url, Monocra
     //pegando url do processo
     Monocratica.url_processo_tribunal = await PageMonocratica.getUrlProcessoTribunalAcompanhamentoProcessual();
   
-
 
     //pegando número de origem
     Monocratica.numeros_origem = await PageMonocratica.getNumeroOrigemAcompanhamentoProcessual();
@@ -126,7 +114,7 @@ async function scrapSingleAcompanhamentoProcessual(PageMonocratica, url, Monocra
 
 }
 
-async function scrapDocumentoInteiro (PageMonocratica, Monocratica, linkProcesso, linkAcompanhamento, linkPDF){
+const scrapDocumentoInteiro = async (PageMonocratica, Monocratica, linkProcesso, linkAcompanhamento, linkPDF) => {
     await scrapSingleMonocratica(PageMonocratica, linkProcesso, Monocratica);
 
     await sleep(1000);
@@ -137,55 +125,14 @@ async function scrapDocumentoInteiro (PageMonocratica, Monocratica, linkProcesso
 }
 
 
-async function antiga(paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado) {
-    try {
-        PageMonocratica = new PageMonocraticaClass();
-        await PageMonocratica.init();
-
-       
-        var linkInicial = await scrapingSetup(PageMonocratica, paginaInicial, dataInicial, dataFinal);
-        PageMonocratica.setUrlInicial(linkInicial);
-
-        let totalPaginas =  await PageMonocratica.getTotalPaginas();
-        totalPaginas = 1;
-        totalPaginas = Number(totalPaginas);
-        callbackTotalPaginas(totalPaginas);
-        console.log("Total de Paginas " + totalPaginas)
-
-
-        console.log("Página " + currentPage + " de " + totalPaginas )
-        //se o total paginas for 0, não tem nada para fazer
-        while (currentPage <= totalPaginas) {
-            const monocraticaPage = await PageMonocratica.scrapAllDocumentsInPage(scrapSingleMonocratica);
-            listaMonocratica.push(...monocraticaPage);
-            callbackResultado(listaMonocratica);
-            currentPage++;
-            
-            if(currentPage != totalPaginas){
-                console.log("Página " + currentPage + " de " + totalPaginas )
-                callbackPassarPagina(currentPage);
-                await PageMonocratica.goToNextPage(currentPage);
-            }
-          
-        }
-
-        console.log(listaMonocratica);
-
-        return listaMonocratica;
-    }catch (error ){
-        console.log(error)
-    }
-    
-}
-
-
-//TODO: integrar com controlador e ajustar a logica de ir pra proxima pagina. quando tiver tudo certo apagar essa funçao e jogar pra la de cima
-async function scrapMonocratica (paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado){
+const scrapMonocratica = async (paginaInicial, dataInicial, dataFinal, callbackTotalPaginas, callbackPassarPagina, callbackResultado) => {
     
     const MAX_ELEMENTS_IN_PAGE = 10;
     
     const PageMonocratica = new PageMonocraticaClass();
     await PageMonocratica.init();
+
+    let currentPage = 1;
 
     const ArrayMonocratica = []
 
@@ -214,7 +161,7 @@ async function scrapMonocratica (paginaInicial, dataInicial, dataFinal, callback
 
             Monocratica = { ...MonocraticaObj };
 
-            console.log("Monocratica " + i + " de 10")
+            console.log("Monocratica " + i + " de " + MAX_ELEMENTS_IN_PAGE + " -- Página atual " + currentPage + " de " + totalPaginas)
             let urls = await PageMonocratica.getUrls(i);
 
 
