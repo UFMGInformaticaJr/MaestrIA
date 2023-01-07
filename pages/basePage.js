@@ -202,12 +202,13 @@ class BasePage {
     async enterTextByCss(css, searchText) {
         await this.page.findElement(By.css(css)).sendKeys(searchText);
     }
-    async getElementByXpath(xpath) {
+    async getElementByXpath(xpath, timeout=1000, log=true) {
         try {
-            return await this.page.waitForSelector(`xpath${xpath}`, { visible: true }, 1000);
+            return await this.page.waitForSelector(`xpath${xpath}`, { visible: true }, timeout);
         }
         catch (err) {
-            console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
+            if (log)
+                console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
             throw err;
         }
     }

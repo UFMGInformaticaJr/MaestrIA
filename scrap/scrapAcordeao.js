@@ -141,6 +141,7 @@ const scrapSingleAcompanhamentoProcessual = async (PageAcordeao, url, Acordeao) 
     await PageAcordeao.takeScreenshot("acompanhamentoProcessual.png")
 
     if (!pularAcompanhemento) {
+        //TODO: parei aqui
         //existem alguns que o cnj nao existem, o texto diz sem numero unico
         const textpCnpj = await PageAcordeao.getCnjCruAcompanhamentoProcessual()
         Acordeao.numero_unico_cnj = textpCnpj.split('-')[0];
@@ -294,6 +295,7 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
         }
 
         PageAcordeao.setUrlInicial(linkkInicial);
+        await PageAcordeao.renderizarPagina();
 
         let totalPaginas = await PageAcordeao.getTotalPaginas();
         totalPaginas = Number(totalPaginas);
