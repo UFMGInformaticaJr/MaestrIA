@@ -20,11 +20,11 @@ class AcordeaoPage extends BasePage {
 
     pathOrgaoJulgador = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[1]/div[1]/h4[4]'
 
-    pathNumeroCnj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
-    pathAssuntoAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li'
+    pathNumeroUnicoCnj = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[1]/div[1]/div[2]';
+    pathAssuntoAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[1]/div[2]/div[2]/ul/li[1]'
 
-    pathNumeroOrigemAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]'
-    pathTribunalOrigemAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[4]'
+    pathNumeroOrigemAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[8]'
+    pathTribunalOrigemAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[4]'
 
     pathBadgeRepercussaoGeral = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/app-badge'
 
@@ -65,7 +65,7 @@ class AcordeaoPage extends BasePage {
         //voltar para a aba resultado completo
         await this.clickByXpath(this.pathTabResultadoCompleto);
 
-        await PageAcordeao.renderizarPagina();
+        await this.renderizarPagina();
 
 
         const textoCompleto = {
