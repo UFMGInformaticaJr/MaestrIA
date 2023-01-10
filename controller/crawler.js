@@ -1,7 +1,9 @@
 // Creates a mock crawler that can be used for testing
-const scrapAcodeao = require('./scrap/scrapAcordeao')
-const scrapMonocratica = require('./scrap/scrapMonocraticas')
+const scrapAcodeao = require('../scrap/scrapAcordeao')
+const scrapMonocratica = require('../scrap/scrapMonocratica')
 const fs = require('fs')
+
+
 let totalPaginas = 0;
 let paginaInicial = 1;
 let paginaAtual = 1;

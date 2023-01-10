@@ -1,9 +1,5 @@
 // Creates a mock crawler that can be used for testing
 
-const { signal } = require("nodemon/lib/config/defaults")
-const { resource } = require("selenium-webdriver/http")
-
-
 process.on('message', ( message) => {
     const type = message[0]
 

@@ -1,4 +1,4 @@
-const AcordeaoObj = require('../acordeao')
+const AcordeaoObj = require('../objects/acordeao')
 const PageAcordeaoClass = require('../pages/acordeaoPage')
 const { NoSuchElementError } = require('selenium-webdriver/lib/error');
 const RequestService = require('../api/request.js');
@@ -8,7 +8,6 @@ const sleep = require('util').promisify(setTimeout);
 let PageAcordeao = null;
 
 let currentPage = 1;
-let elementsParsed = 0;
 
 let listaAcordeao = [];
 
@@ -61,7 +60,6 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
         Acordeao.orgao_julgador = orgaoJulgadorText.trim()
     }
 
-    // TODO: parei aqui. DEve ser erro de xpath relativo vs absoluto
     const textoClasse = await PageAcordeao.getClasse();
     Acordeao.classe = textoClasse.split(' ')[0];
     Acordeao.classe = await PageAcordeao.titleCase(Acordeao.classe)

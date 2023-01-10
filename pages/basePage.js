@@ -85,8 +85,6 @@ class BasePage {
             ignoreHTTPSErrors: true
         });
 
-          
-
         this.page = await this.browser.newPage();
         await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36');
 
@@ -128,8 +126,7 @@ class BasePage {
         try {
             let elemento
 
-            
-
+        
             await this.go_to_url(this.base_url);
 
             await this.selectAndWait(this.iconePesquisaAvancada, 2000);

@@ -1,12 +1,11 @@
-const MonocraticaObj = require('../monocraticas.js')
+const MonocraticaObj = require('../objects/monocratica.js')
 const PageMonocraticaClass = require('../pages/monocraticaPage');
 const RequestService = require('../api/request.js');
 const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
 
 
-const scrapingSetup = async (PageMonocratica,  paginaInicial = 1, dataInicial, dataFinal) => {
-    //TODO: Isso pode ser extraido para a classe basePage
+const scrapingSetup = async (PageMonocratica,  paginaInicial , dataInicial, dataFinal) => {
     await PageMonocratica.setUpSearchOptions();
     const novaUrl = await PageMonocratica.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal)
     await PageMonocratica.go_to_url(novaUrl)
@@ -175,8 +174,6 @@ const scrapMonocratica = async (paginaInicial, dataInicial, dataFinal, callbackT
 
             callbackResultado(Monocratica);
 
-
-            //TODO - deixar esse link sempre variavel e na parte de ir pra proxima pagina trocar o link
             await returnToSearchResults();
         }
 

@@ -1,14 +1,12 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const controllerRouter = require('./router.js')
+const controllerRouter = require('./controller/router.js')
 
 const scrapAcordao = require('./scrap/scrapAcordeao.js');
 const scrapMonocraticas = require('./scrap/scrapMonocraticas.js');
 
 const RequestService = require('./api/request.js')
-
-
 
 const app = express();
 
@@ -18,6 +16,11 @@ app.listen(port, () => {
     console.log(`listening at http://localhost:${port}`)
 })
 
+app.use('/', controllerRouter);
+
+
+
+//rotas para testar o scrap individual
 let totalPaginas = 0;
 const resultados = []
 let paginaAtual = 1;
@@ -33,7 +36,7 @@ const mockSalvarResultado = (resultado) => {
     resultados.push(resultado)
 }
 
-app.use('/', controllerRouter)
+
 
 app.get('/acordeao', async (request, response) => {
     try {
