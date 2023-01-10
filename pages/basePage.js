@@ -68,7 +68,7 @@ class BasePage {
     async init() {
         this.browser = await puppeteer.launch({
             executablePath: executablePath(),
-            headless: false,
+            headless: true,
             defaultViewport: null,
             args: [
                 '--start-maximized',
@@ -86,6 +86,10 @@ class BasePage {
         });
 
         this.page = await this.browser.newPage();
+        await this.page.setViewport({
+            width: 375,
+            height: 667
+          });
         await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36');
 
     }
@@ -199,12 +203,14 @@ class BasePage {
     async enterTextByCss(css, searchText) {
         await this.page.findElement(By.css(css)).sendKeys(searchText);
     }
-    async getElementByXpath(xpath) {
+    async getElementByXpath(xpath, timeout=1000, log=true) {
         try {
-            return await this.page.waitForSelector(`xpath${xpath}`, { visible: true }, 1000);
+            return await this.page.waitForSelector(`xpath${xpath}`, { visible: true }, timeout);
         }
         catch (err) {
-            console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
+            if (log){
+                console.error("Erro ao encontrar elemento pelo xpath: " + xpath)
+            }    
             throw err;
         }
     }
@@ -308,13 +314,14 @@ class BasePage {
         await this.page.wait(webthis.page.until.elementIsEnabled(element), timeout);
     }
 
-    async selectAndWait(xpath, timeout=1000) {
+    async selectAndWait(xpath, timeout=1000, log=true) {
         try{
         await this.page.waitForSelector(`xpath/${xpath}`, { visible: true }, timeout);
         }catch(err){
-            console.log("timeout error para elemento ", xpath)
+            if (log)
+                console.log("timeout error para elemento ", xpath)
         }
-        return await this.getElementByXpath(xpath);
+        return await this.getElementByXpath(xpath,timeout, log);
 
 
     }
@@ -562,6 +569,33 @@ class BasePage {
 
     }
 
+    async getElementCountInPage(){
+        const xpath = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/div'
+
+        /* Deveria funcionar?
+        const element = await this.page.evaluate(() => {
+            //seletor para a coluna que tem todos os rows de elementos
+            return document.querySelector('#scrollId > div > div > div:nth-child(2) > div > div:nth-child(2)');
+          });
+
+        return element?.childElementCount ?? 0
+          
+        const element = await this.page.evaluate((xpath) => {
+            const element = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+            return element;
+          }, xpath);
+          
+        const childrenCount = element.children.length;
+        return childrenCount;
+        */
+        const elem = await this.page.$x(xpath);
+       
+const childrenCount = await this.page.evaluate(elem => elem.children.length, elem)
+return childrenCount
+        
+          
+    }
+
     async getTotalPaginas() {
         try{
             
@@ -615,8 +649,8 @@ class BasePage {
         await this.page.screenshot({path: nomearquivo});
     }
 
-    async getUrlByXpath(xpath) {
-        const elemento = await this.selectAndWait(xpath, 2000);
+    async getUrlByXpath(xpath, log=true) {
+        const elemento = await this.selectAndWait(xpath, 2000, log);
         const value = await elemento.evaluate(el => el.href)
         return value
     }
@@ -624,14 +658,14 @@ class BasePage {
 
     async getUrlProcesso(i){
         let xpathProcesso = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/a`
-        let url = await this.getUrlByXpath(xpathProcesso);
+        let url = await this.getUrlByXpath(xpathProcesso, false);
         return url;
     }
 
     async getUrlAcompanhamento (i, offset=0){
         
         let xpathAcompanhamento = `/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[${i}]/div[1]/div/a[${2+offset}]`
-        let url = await this.getUrlByXpath(xpathAcompanhamento);
+        let url = await this.getUrlByXpath(xpathAcompanhamento, false);
         return url;
     }
 
@@ -641,6 +675,8 @@ class BasePage {
         return url;
     }
 
+    
+
     async getUrls(i, isAcordeao=false){
 
         let offset = 0;
@@ -649,9 +685,23 @@ class BasePage {
         }
 
         let urls = [];
+        try {
         urls.push(await this.getUrlProcesso(i));
         urls.push(await this.getUrlAcompanhamento(i, offset));
         urls.push(await this.getUrlPDF(i, offset));
+        }
+        //acontece se temos menos que 10 elementos na pagina, de forma que ele não ache o i-esimo e levante uma excessão
+        catch(e){
+            
+            if(i > 1){
+                console.log("Acabaram os elementos na pagina")
+            return []
+
+            }
+            else {
+                throw e;
+            }
+        }
         return urls;
     }
 

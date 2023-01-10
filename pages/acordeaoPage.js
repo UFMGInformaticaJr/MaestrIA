@@ -14,23 +14,23 @@ class AcordeaoPage extends BasePage {
     pathDataPublicacao = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[1]/div[1]/div/h4[2]';
     pathPartes = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[4]/h4';
     pathDecisaoJurisprudencia = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[6]/h4';
-    pathIconeAcompanhamentoProcessual = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[1]';
-    pathIconeInteiroTeor = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]';
+    //pathIconeAcompanhamentoProcessual = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[1]';
+    //pathIconeInteiroTeor = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/div/mat-icon[2]';
     pathTotalPaginas = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/paginator/nav/div/span';
 
     pathOrgaoJulgador = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[1]/div/div/div[1]/div[1]/h4[4]'
 
-    pathNumeroCnj = '//*[@id="texto-pagina-interna"]/div/div/div/div[1]/div[1]/div[2]';
-    pathAssuntoAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[1]/div[2]/div[2]/ul/li'
+    pathNumeroUnicoCnj = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[1]/div[1]/div[2]';
+    pathAssuntoAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[1]/div[2]/div[2]/ul/li[1]'
 
-    pathNumeroOrigemAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[8]'
-    pathTribunalOrigemAcompanhamentoProcessual = '//*[@id="informacoes-completas"]/div[2]/div[1]/div[2]/div[4]'
+    pathNumeroOrigemAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[8]'
+    pathTribunalOrigemAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[4]'
 
     pathBadgeRepercussaoGeral = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[2]/app-badge'
 
-    pathTabEmentafull = '//*[@id="mat-tab-label-0-1"]'
-    pathTabResultadoCompleto = '//*[@id="mat-tab-label-0-0"]'
-    pathEmentaFull = '//*[@id="mat-tab-content-0-1"]/div/div/span[1]'
+    pathTabEmentafull = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/mat-tab-header/div[2]/div/div/div[2]'
+    pathTabResultadoCompleto = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/mat-tab-header/div[2]/div/div/div[1]'
+    pathEmentaFull = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[2]/div/div/span[1]'
 
     async enter_url(theURL) {
         await this.go_to_url(theURL);
@@ -59,14 +59,14 @@ class AcordeaoPage extends BasePage {
         //selecionar elemento abaixo do texto
        
         let filho = "following-sibling::span[1]"
-        let parteSecundaria = await ementa_full_elemento.waitForSelector(`xpath${filho}`, { visible: true }, 1000);
-        let linha_citacao = await parteSecundaria.evaluate(element => element.textContent, element);
+        let parteSecundaria = await ementa_full_elemento.$x('following-sibling::span[1]');
+        let linha_citacao = await parteSecundaria[0].evaluate(element => element.textContent, parteSecundaria);
 
         //voltar para a aba resultado completo
         await this.clickByXpath(this.pathTabResultadoCompleto);
 
-        // esperar o elemento ser carregado
-        await this.selectAndWait(this.pathRelator);
+        await this.renderizarPagina();
+
 
         const textoCompleto = {
             ementa_full: ementa_full,
@@ -82,10 +82,10 @@ class AcordeaoPage extends BasePage {
         let badge;
         try {
             //TODO: criar metodo com timeout menor pra isso
-            badge = await this.getElementByXpath(this.pathBadgeRepercussaoGeral);
+            badge = await this.getElementByXpath(this.pathBadgeRepercussaoGeral, 200, false);
             
         } catch (e) {
-            console.log('Não existe badge de repercussão geral, erro');
+            console.log('Não existe badge de repercussão geral nessa pagina');
             return null;
         }
 

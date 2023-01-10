@@ -9,7 +9,7 @@ let PageAcordeao = null;
 
 let currentPage = 1;
 
-let listaAcordeao = [];
+//let listaAcordeao = [];
 
 const scrapingSetup = async (PageAcordeao, paginaInicial = 1, dataInicial, dataFinal) => {
 
@@ -118,7 +118,7 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
         Acordeao.linha_citacao = PageAcordeao.cleanText(ementaDados.linha_citacao)
     }
 
-    return listaAcordeao;
+    //return listaAcordeao;
 }
 
 const scrapSingleAcompanhamentoProcessual = async (PageAcordeao, url, Acordeao) => {
@@ -139,6 +139,7 @@ const scrapSingleAcompanhamentoProcessual = async (PageAcordeao, url, Acordeao) 
     await PageAcordeao.takeScreenshot("acompanhamentoProcessual.png")
 
     if (!pularAcompanhemento) {
+        //TODO: parei aqui
         //existem alguns que o cnj nao existem, o texto diz sem numero unico
         const textpCnpj = await PageAcordeao.getCnjCruAcompanhamentoProcessual()
         Acordeao.numero_unico_cnj = textpCnpj.split('-')[0];
@@ -271,13 +272,13 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
     }
 
 
+    const arrayAcordeao = []
 
     try {
 
         PageAcordeao = new PageAcordeaoClass();
         await PageAcordeao.init();
 
-        const arrayAcordeao = []
 
         let Acordeao = {...AcordeaoObj}
 
@@ -287,11 +288,12 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
         // da pra saber isso vendo o html
 
         const returnToSearchResults = async () => {
-            await PageAcordeao.go_to_url(linkInicial);
+            await PageAcordeao.go_to_url(linkkInicial);
         
         }
 
         PageAcordeao.setUrlInicial(linkkInicial);
+        await PageAcordeao.renderizarPagina();
 
         let totalPaginas = await PageAcordeao.getTotalPaginas();
         totalPaginas = Number(totalPaginas);
@@ -304,7 +306,9 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
 
         //totalPaginas = 2;
 
-        const TOTAL_ACORDEOES_PAGINA = 10;
+        let TOTAL_ACORDEOES_PAGINA = 10;
+        //TODO: descobrir como fazer isso, nao consegui
+        //TOTAL_ACORDEOES_PAGINA = await PageAcordeao.getElementCountInPage();
 
         while (currentPage <= totalPaginas) {
             if (currentPage > 1) {
@@ -322,7 +326,12 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
                 let urls = await PageAcordeao.getUrls(i, true);
     
                 //TODO: verificar se acabou os elementos na pagina e, se tiver, sair
-    
+                if (urls.length == 0){
+                    console.log("Saindo do loop interno para a pagina...")
+                    break;
+                }
+
+
                 let linkProcesso = urls[0];
                 let linkAcompanhamento = urls[1];
                 let linkPDF = urls[2];
@@ -359,9 +368,11 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
 
         throw error;
     }
+    //TODO: @marcelomrad
+    // não deveriamos colocar o finally aqui pra matar o browser?
 
 
-    return listaAcordeao;
+    return arrayAcordeao;
 }
 
 
