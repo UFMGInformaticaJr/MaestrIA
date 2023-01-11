@@ -3,8 +3,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const controllerRouter = require('./router.js')
 
-const scrapAcordao = require('./scrap/scrapAcordeao.js');
-const scrapMonocraticas = require('./scrap/scrapMonocratica.js');
+const scrapAcordao = require('./scrap/STF/scrapAcordeao.js');
+const scrapMonocraticas = require('./scrap/STF/scrapMonocratica.js');
 
 const RequestService = require('./api/request.js')
 

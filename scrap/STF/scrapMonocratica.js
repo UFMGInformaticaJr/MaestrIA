@@ -1,6 +1,6 @@
-const MonocraticaObj = require('../objects/monocratica.js')
-const PageMonocraticaClass = require('../pages/STF/monocraticaPage');
-const RequestService = require('../api/request.js');
+const MonocraticaObj = require('../../objects/STF/monocratica.js')
+const PageMonocraticaClass = require('../../pages/STF/monocraticaPage');
+const RequestService = require('../../api/request.js');
 const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
 

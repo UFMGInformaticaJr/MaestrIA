@@ -1,6 +1,6 @@
-const AcordeaoObj = require('../objects/acordeao')
-const PageAcordeaoClass = require('../pages/STF/acordeaoPage')
-const RequestService = require('../api/request.js');
+const AcordeaoObj = require('../../objects/STF/acordeao')
+const PageAcordeaoClass = require('../../pages/STF/acordeaoPage')
+const RequestService = require('../../api/request.js');
 const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
 
