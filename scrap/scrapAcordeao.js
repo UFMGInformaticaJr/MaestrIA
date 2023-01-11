@@ -1,6 +1,5 @@
 const AcordeaoObj = require('../objects/acordeao')
-const PageAcordeaoClass = require('../pages/acordeaoPage')
-const { NoSuchElementError } = require('selenium-webdriver/lib/error');
+const PageAcordeaoClass = require('../pages/STF/acordeaoPage')
 const RequestService = require('../api/request.js');
 const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
@@ -16,8 +15,8 @@ const scrapingSetup = async (PageAcordeao, paginaInicial = 1, dataInicial, dataF
     //Refatorado pra nao buscar
     const urlBase = await PageAcordeao.newSetupOptions();
 
-    const novaUrl = await PageAcordeao.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal, urlBase)
-    await PageAcordeao.go_to_url(novaUrl)
+    const novaUrl = await PageAcordeao.insertPageAndDatesInUrl(paginaInicial, dataInicial, dataFinal, urlBase)
+    await PageAcordeao.goToUrl(novaUrl)
 
     return novaUrl;
 
@@ -42,7 +41,7 @@ const scrapSingleAcordeao = async (PageAcordeao, linkAcordeao, Acordeao) => {
     let id = randomUUID();
     Acordeao.id_jurisprudencia = id;
 
-    await PageAcordeao.renderizarPagina();
+    await PageAcordeao.renderPage();
 
 
     const textoProcesso = await PageAcordeao.getProcesso();
@@ -125,12 +124,12 @@ const scrapSingleAcompanhamentoProcessual = async (PageAcordeao, url, Acordeao) 
 
     let pularAcompanhemento = false
     try {
-        await PageAcordeao.go_to_url(url);
+        await PageAcordeao.goToUrl(url);
     await sleep(2000)
         
     }
     catch (error) {
-        if (error instanceof NoSuchElementError) {
+        if (error) {
             pularAcompanhemento = true
             console.log("Acompanhamento não presente!")
         }
@@ -200,9 +199,9 @@ const scrapingAcordeao = async (paginaInicial = 1, dataInicial, dataFinal, callb
 
         PageAcordeao.setUrlInicial(linkkInicial);
 
-        await PageAcordeao.renderizarPagina();
+        await PageAcordeao.renderPage();
 
-        let totalPaginas = await PageAcordeao.getTotalPaginas();
+        let totalPaginas = await PageAcordeao.getTotalPages();
         totalPaginas = Number(totalPaginas);
 
         callbackTotalPaginas(totalPaginas);
@@ -288,14 +287,14 @@ const teste = async (paginaInicial = 1, dataInicial, dataFinal, callbackTotalPag
         // da pra saber isso vendo o html
 
         const returnToSearchResults = async () => {
-            await PageAcordeao.go_to_url(linkkInicial);
+            await PageAcordeao.goToUrl(linkkInicial);
         
         }
 
         PageAcordeao.setUrlInicial(linkkInicial);
-        await PageAcordeao.renderizarPagina();
+        await PageAcordeao.renderPage();
 
-        let totalPaginas = await PageAcordeao.getTotalPaginas();
+        let totalPaginas = await PageAcordeao.getTotalPages();
         totalPaginas = Number(totalPaginas);
 
         callbackTotalPaginas(totalPaginas);

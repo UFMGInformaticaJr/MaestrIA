@@ -1,5 +1,5 @@
 const MonocraticaObj = require('../objects/monocratica.js')
-const PageMonocraticaClass = require('../pages/monocraticaPage');
+const PageMonocraticaClass = require('../pages/STF/monocraticaPage');
 const RequestService = require('../api/request.js');
 const { randomUUID } = require('crypto');
 const sleep = require('util').promisify(setTimeout);
@@ -7,8 +7,8 @@ const sleep = require('util').promisify(setTimeout);
 
 const scrapingSetup = async (PageMonocratica,  paginaInicial , dataInicial, dataFinal) => {
     await PageMonocratica.setUpSearchOptions();
-    const novaUrl = await PageMonocratica.inserirPaginaEDatasNaUrl(paginaInicial, dataInicial, dataFinal)
-    await PageMonocratica.go_to_url(novaUrl)
+    const novaUrl = await PageMonocratica.insertPageAndDatesInUrl(paginaInicial, dataInicial, dataFinal)
+    await PageMonocratica.goToUrl(novaUrl)
 
     return novaUrl;
 
@@ -33,7 +33,7 @@ const scrapSingleMonocratica = async (PageMonocratica, linkMonocratica, Monocrat
     let id = randomUUID();
     Monocratica.id_jurisprudencia = id;
 
-    await PageMonocratica.renderizarPagina();
+    await PageMonocratica.renderPage();
   
     //CHECAR SE EXISTE ELEMENTOS NA PÁGINA
     Monocratica.indexacao = await PageMonocratica.getContentIfTextExists("Indexação", "h4")
@@ -77,7 +77,7 @@ const scrapSingleMonocratica = async (PageMonocratica, linkMonocratica, Monocrat
 
 const scrapSingleAcompanhamentoProcessual = async (PageMonocratica, url, Monocratica) => {
     console.log("Abrindo pagina acompnhamento  " + url)
-    await PageMonocratica.go_to_url(url);
+    await PageMonocratica.goToUrl(url);
 
     await sleep(2000)
 
@@ -141,13 +141,13 @@ const scrapMonocratica = async (paginaInicial, dataInicial, dataFinal, callbackT
     
     
     const returnToSearchResults = async () => {
-        await PageMonocratica.go_to_url(linkInicial);
+        await PageMonocratica.goToUrl(linkInicial);
     
     }
     
     PageMonocratica.setUrlInicial(linkInicial);
 
-    let totalPaginas =  await PageMonocratica.getTotalPaginas();
+    let totalPaginas =  await PageMonocratica.getTotalPages();
     console.log("Total de Paginas " + totalPaginas)
     
     totalPaginas = Number(totalPaginas);

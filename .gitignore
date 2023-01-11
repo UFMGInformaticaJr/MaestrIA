@@ -3,3 +3,4 @@ monocratica.txt
 acordeao.txt
 *.png
 .gitignore
+.env

@@ -6,7 +6,6 @@ const { fork } = require('child_process')
 const uuid = require('uuid');
 
 const crawlerPath = './crawler.js'
-
 class mutex {
     constructor() {
         this.locked = false
@@ -126,7 +125,7 @@ router.post('/start', async (req, res) => {
     const tribunal = req.body.tribunal ?? "STF"
     const tipo = req.body.tipo ?? "monocratica"
     const dataInicial = req.body.dataInicial ?? "01/01/2021"
-    const dataFinal = req.body.dataFinal ?? "01/10/2021"
+    const dataFinal = req.body.dataFinal ?? "01/02/2021"
 
 
 

@@ -1,10 +1,10 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const controllerRouter = require('./controller/router.js')
+const controllerRouter = require('./router.js')
 
 const scrapAcordao = require('./scrap/scrapAcordeao.js');
-const scrapMonocraticas = require('./scrap/scrapMonocraticas.js');
+const scrapMonocraticas = require('./scrap/scrapMonocratica.js');
 
 const RequestService = require('./api/request.js')
 
@@ -17,6 +17,8 @@ app.listen(port, () => {
 })
 
 app.use('/', controllerRouter);
+
+
 
 
 
@@ -35,8 +37,6 @@ const mockPassarDePagina = () => {
 const mockSalvarResultado = (resultado) => {
     resultados.push(resultado)
 }
-
-
 
 app.get('/acordeao', async (request, response) => {
     try {

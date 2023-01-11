@@ -1,7 +1,6 @@
-const { Key, By } = require('selenium-webdriver');
-var BasePage = require('./basepage');
+var STFPage = require('./STFPage');
 
-class AcordeaoPage extends BasePage {
+class AcordeaoPage extends STFPage {
 
     //variaveis sobrecarregadas
     primeiroLink = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/div/div[2]/div[1]/a';
@@ -33,7 +32,7 @@ class AcordeaoPage extends BasePage {
     pathEmentaFull = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/mat-tab-group/div/mat-tab-body[2]/div/div/span[1]'
 
     async enter_url(theURL) {
-        await this.go_to_url(theURL);
+        await this.goToUrl(theURL);
     }
     async setUpSearchOptions() {
         await super.setUpSearchOptions('acordeao');
@@ -49,7 +48,7 @@ class AcordeaoPage extends BasePage {
         //Clickar na aba ementa e mudar de aba
         await this.clickByXpath(this.pathTabEmentafull);
 
-        await this.renderizarPagina();
+        await this.renderPage();
         
         const ementa_full = await this.getTextUsingSelector(this.pathEmentaFull);
         const ementa_full_elemento = await this.getElementByXpath(this.pathEmentaFull);
@@ -65,7 +64,7 @@ class AcordeaoPage extends BasePage {
         //voltar para a aba resultado completo
         await this.clickByXpath(this.pathTabResultadoCompleto);
 
-        await this.renderizarPagina();
+        await this.renderPage();
 
 
         const textoCompleto = {

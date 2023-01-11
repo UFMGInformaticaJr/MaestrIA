@@ -1,6 +1,6 @@
-var BasePage = require('./basePage');
+var STFPage = require('./STFPage.js');
 
-class MonocraticaPage extends BasePage {
+class MonocraticaPage extends STFPage {
 
     primeiroLink = '//*[@id="result-index-0"]/a';
     pathProcesso = '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[1]/h4[1]'
@@ -14,11 +14,6 @@ class MonocraticaPage extends BasePage {
     pathIconeInteiroTeor =  '/html/body/app-root/app-home/main/app-search-detail/div/div/div[1]/div/div[1]/div[2]/div/mat-icon[2]';
     pathTotalPaginas = '/html/body/app-root/app-home/main/search/div/div/div/div[2]/paginator/nav/div/span';
  
-
-    //pathOrgaoJulgador = '//*[@id="mat-tab-content-0-0"]/div/div/div[1]/div[1]/h4[4]'
-
-    
-   
 
     pathNumeroUnicoCnj = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[1]/div[1]/div[2]';
     pathAssuntoAcompanhamentoProcessual = '/html/body/div[1]/div[2]/section/div/div/div/div/div/div/div[2]/div[4]/div[1]/div/div[1]/div[2]/div[2]/ul/li'

@@ -25,7 +25,6 @@ process.on('message', ( message) => {
 })
 
 
-
 async function Crawler(timeout = 2, percentage = 0.4, callback) {
     
 
