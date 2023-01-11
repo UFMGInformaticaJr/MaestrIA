@@ -5,7 +5,7 @@ const { fork } = require('child_process')
 //create uuid
 const uuid = require('uuid');
 
-
+const crawlerPath = './crawler.js'
 class mutex {
     constructor() {
         this.locked = false
@@ -34,7 +34,7 @@ let mutexOcioso = new mutex()
 
 let child = null
 
-let lastStatus = 'ocioso'
+let lastStatus = 'Primeira pagina'
 
 
 
@@ -46,7 +46,7 @@ const createChild = () => {
         child.disconnect()
     }
 
-    child = fork('./mock_crawler.js')
+    child = fork(crawlerPath)
     console.log("______________ nova thread ______________")
     console.log("PID do crawler recem criado: " + child.pid)
 
@@ -79,11 +79,14 @@ const createChild = () => {
     })
 
 }
-router.get('/health', (req, res) => {
+router.get('/health', async (req, res) => {
 
     if (mutexOcioso.locked) {
         child.send(['status'])
-        res.send(`Crawler ${crawlerId} ocupado. Ultimo status: ${lastStatus}`)
+
+        setTimeout(() => {
+      res.send(`Crawler ${crawlerId} ocupado. \nUltimo status: \n${lastStatus}`);
+    }, 3000); 
     }
     else {
         res.send(`Crawler ocioso`)
@@ -111,18 +114,19 @@ router.get('/stop', async (req, res) => {
 })
 
 router.post('/start', async (req, res) => {
-/**
- * Envie um json no formato para o endpoint, depois colocamos os dados reais
-  {
-	"timeout": 8000,
-	"percentage": 0.4
-   }
- */
+    /**
+     * Envie um json no formato para o endpoint, depois colocamos os dados reais
+      {
+        "timeout": 8000,
+        "percentage": 0.4
+       }
+     */
 
+    const tribunal = req.body.tribunal ?? "STF"
+    const tipo = req.body.tipo ?? "monocratica"
+    const dataInicial = req.body.dataInicial ?? "01/01/2021"
+    const dataFinal = req.body.dataFinal ?? "01/02/2021"
 
-
-    const timeout = req.body.timeout
-    const percentage = req.body.percentage
 
 
     const estaOcioso = mutexOcioso.acquire()
@@ -137,14 +141,15 @@ router.post('/start', async (req, res) => {
 
 
     parameters = {
-        timeout: timeout ?? 3000,
-        percentage: percentage ?? 0.5,
-        id: crawlerId
+        tribunal,
+        tipo,
+        dataInicial,
+        dataFinal
     }
     //criar processo se o ultimo acabou, nao deve acontecer
     if (child == null || child.killed || child.exitCode != null) {
         console.warn("Crawler morreu, criando novo processo")
-       
+
     }
 
     //enviar mensagem de inicio e parametros

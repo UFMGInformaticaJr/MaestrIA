@@ -1,6 +1,7 @@
 const axios = require('axios');
+require ('dotenv').config();
 
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY3MTQ2MzQ3OCwianRpIjoiZGM3MDk1ZTAtYjVhZS00MjI1LTlhMzgtMTAzYmUzMTI4OTRjIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6InVmbWdfYXBpIiwibmJmIjoxNjcxNDYzNDc4fQ.yowLJrXpMjM2xk0Hwumx9OG3sAO3ffRRWJVqRda3Sp0';
+const token = process.env.TOKEN;
   
 const api = axios.create({
     baseURL: 'https://portal.maestriaapis.maestrialaw.com.br',
@@ -46,7 +47,6 @@ class RequestService {
   async getID() {
     try{
         const response = await this.api.get('/get-crawler-id');
-        console.log(response.data);
         return response.data;
     }
     catch(error){

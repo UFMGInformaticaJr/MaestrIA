@@ -1,1 +1,6 @@
 /node_modules
+monocratica.txt
+acordeao.txt
+*.png
+.gitignore
+.env
