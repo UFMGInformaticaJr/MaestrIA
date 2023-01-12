@@ -1,6 +1,6 @@
 let Monocratica = {
-    tipo_publicacao : 'DECISAO_MONOCRATICA',
-    cod_cnj_tj: '100',
+    tipo_publicacao : "DECISAO_MONOCRATICA",
+    cod_cnj_tj: "100",
     processo : "",
     classe : "",
     assunto : "",
@@ -12,7 +12,7 @@ let Monocratica = {
     numero_unico_cnj : "",
     numeros_origem : "",
     url_pdf: "",
-    tipo_jurisdicao : 'INSTANCIA',
+    tipo_jurisdicao : "INSTANCIA",
     comarca: "",
 }
 
