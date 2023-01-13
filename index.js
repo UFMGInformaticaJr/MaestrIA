@@ -6,6 +6,8 @@ const controllerRouter = require('./router.js')
 const scrapAcordao = require('./scrap/STF/scrapAcordeao.js');
 const scrapMonocraticas = require('./scrap/STF/scrapMonocratica.js');
 
+const scrapTJACMonocraticas = require('./scrap/TJAC/scrapMonocratica.js');
+
 const RequestService = require('./api/request.js')
 
 const app = express();
@@ -50,6 +52,16 @@ app.get('/acordeao', async (request, response) => {
 app.get('/monocraticas', async (request, response) => {
     try {
         let links = await scrapMonocraticas(1, "20/05/2020" , "21/05/2020", mockAtualizarTotalPaginas, mockPassarDePagina, mockSalvarResultado);
+        console.log(resultados)
+        response.status(200).json(links)
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+app.get('/TJACmonocraticas', async (request, response) => {
+    try {
+        let links = await scrapTJACMonocraticas(1, "20/05/2020" , "21/05/2020", mockAtualizarTotalPaginas, mockPassarDePagina, mockSalvarResultado);
         console.log(resultados)
         response.status(200).json(links)
     } catch (error) {
