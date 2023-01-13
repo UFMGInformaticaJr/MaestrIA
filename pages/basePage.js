@@ -16,13 +16,13 @@ class BasePage {
     async init() {
         this.browser = await puppeteer.launch({
             executablePath: executablePath(),
-            headless: true,
+            headless: false,
             defaultViewport: null,
             args: [
                 '--start-maximized',
                 '--ignore-certificate-errors',
                 '--allow-running-insecure-content',
-                '--disabel-extension',
+                '--disable-extension',
                 '--disable-gpu',
                 '--disable-dev-shm-usage',
                 '--no-sandbox',
