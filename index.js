@@ -5,6 +5,7 @@ const controllerRouter = require('./router.js')
 
 const scrapAcordao = require('./scrap/STF/scrapAcordeao.js');
 const scrapMonocraticas = require('./scrap/STF/scrapMonocratica.js');
+const scrapTJAL = require('./scrap/TJAL/scrapTJAL.js');
 
 const RequestService = require('./api/request.js')
 
@@ -70,6 +71,16 @@ app.get('/request', async (request, response) => {
 app.get('/teste', async (request, response) => {
     try {
        await takeScreenshot();
+      
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+app.get('/tjal', async (request, response) => {
+    try {
+        const link = await scrapTJAL;
+        response.status(200).json('link')
       
     } catch (error) {
         console.log(error)

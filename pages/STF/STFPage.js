@@ -1,4 +1,4 @@
-var BasePage = require('../BasePage.js');
+var BasePage = require('../basePage.js');
 const sleep = require('util').promisify(setTimeout);
 
 class STFPage extends BasePage {
